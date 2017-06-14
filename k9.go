@@ -3,7 +3,6 @@ package main
 // TODO wkpo clean up les imports, et sorter?
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -29,6 +28,7 @@ func main() {
 func handleRequest(responseWriter *http.ResponseWriter, request *http.Request, client *http.Client) {
 	// read the body
 	body, err := ioutil.ReadAll(request.Body)
+	defer request.Body.Close()
 	if maybeLogErrorAndReply(err, responseWriter, 500, "Could not read body") {
 		return
 	}
@@ -53,14 +53,15 @@ func handleRequest(responseWriter *http.ResponseWriter, request *http.Request, c
 		responseHeaders[key] = value
 	}
 
+	// copy the status code
+	(*responseWriter).WriteHeader(clientResponse.StatusCode)
+
 	// copy the body
 	_, err = io.Copy(*responseWriter, clientResponse.Body)
+	defer clientResponse.Body.Close()
 	if maybeLogErrorAndReply(err, responseWriter, 500, "Unable to copy response") {
 		return
 	}
-
-	// copy the status code
-	(*responseWriter).WriteHeader(clientResponse.StatusCode)
 }
 
 func maybeLogErrorAndReply(err error, responseWriter *http.ResponseWriter, code int, logPrefix string) bool {

@@ -18,7 +18,7 @@ const (
 type HttpProxyRequestBodyTransformation struct {
 	Action HttpProxyAction
 	// for any other action than TRANSFORM_BODY, transformedBody should be nil
-	TransformedBody io.ReadCloser
+	TransformedBody io.Reader
 }
 
 type HttpProxyRequestBodyTransformer interface {
@@ -94,7 +94,6 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 		logDebug("Ignoring request to %v", request.URL.Path)
 		return
 	}
-	defer transformedBody.Close()
 
 	// prepare the request
 	clientRequest, err := http.NewRequest(request.Method, proxy.Target+request.URL.Path, transformedBody)
@@ -130,8 +129,8 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 	}
 }
 
-func (proxy *HttpProxy) transformBody(request *http.Request) (io.ReadCloser, error) {
-	var reader io.ReadCloser
+func (proxy *HttpProxy) transformBody(request *http.Request) (io.Reader, error) {
+	var reader io.Reader
 
 	if proxy.Transformer == nil {
 		reader = request.Body

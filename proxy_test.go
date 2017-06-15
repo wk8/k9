@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net"
@@ -173,8 +174,40 @@ func getFreePort() int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
+// a transformer that just lets everything through
 type DummyTransformer struct{}
 
 func (*DummyTransformer) process(*http.Request) (HttpProxyRequestBodyTransformation, error) {
 	return HttpProxyRequestBodyTransformation{Action: KEEP_AS_IS}, nil
+}
+
+// a more complicated transformer:
+//  * if the body contains "ignore me", then ignores that request
+//  * if the body contains "error!", then returns an error
+//  * any occurence of "delete me" in the body is removed, any occurence of
+//    "double me" is doubled
+//  * if none of the above applies, passes the request through as is
+type TestTransformer struct{}
+
+func (*TestTransformer) process(request *http.Request) (HttpProxyRequestBodyTransformation, error) {
+	// read the body
+	bodyAsBytes, err := ioutil.ReadAll(request.Body)
+	body := string(bodyAsBytes)
+
+	if strings.Contains(body, "ignore me") {
+		return HttpProxyRequestBodyTransformation{Action: IGNORE_REQUEST}, nil
+	}
+	if strings.Contains(body, "error") {
+		return nil, errors.New("dummy error")
+	}
+
+	newBody := strings.Replace(body, "delete me", "", -1)
+	newBody = strings.Replace(newBody, "double me", "double medouble me", -1)
+
+	if newBody == body {
+		return HttpProxyRequestBodyTransformation{Action: KEEP_AS_IS}, nil
+	} else {
+		return HttpProxyRequestBodyTransformation{Action: KEEP_AS_IS,
+			TransformedBody: strings.NewReader(newBody)}, nil
+	}
 }

@@ -22,7 +22,7 @@ type HttpProxyRequestBodyTransformation struct {
 }
 
 type HttpProxyRequestBodyTransformer interface {
-	process(*http.Request) (HttpProxyRequestBodyTransformation, error)
+	process(*http.Request) (*HttpProxyRequestBodyTransformation, error)
 }
 
 type HttpProxy struct {

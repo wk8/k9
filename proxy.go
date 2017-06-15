@@ -36,7 +36,7 @@ type HttpProxy struct {
 // fine for the transformer to be nil
 func NewProxy(target string, transformer HttpProxyRequestBodyTransformer) *HttpProxy {
 	transport := &http.Transport{
-		DisableKeepAlives:   false,
+		DisableKeepAlives:   true,
 		MaxIdleConnsPerHost: 128,
 	}
 	client := &http.Client{Transport: transport}

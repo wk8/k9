@@ -246,16 +246,71 @@ func TestProxy(t *testing.T) {
 			proxy.Stop()
 		})
 
-	// t.Run("when the transformer sends back a transformed body",
-	//   func(t *testing.T) {
-	//     proxy := NewProxy(proxyTarget, &TestTransformer{})
-	//     proxy.Start(proxyPort)
-	//
-	//     response, err := http.Post(echoUrl, "text/html", strings.NewReader("hey, ignore me!"))
-	//     if err != nil {
-	//       t.Fatal(err)
-	//     }
-	//   })
+	t.Run("when the transformer sends back a shorter body",
+		func(t *testing.T) {
+			proxy := NewProxy(proxyTarget, &TestTransformer{})
+			proxy.Start(proxyPort)
+
+			request, err := http.NewRequest("POST", echoUrl, bytes.NewBufferString("don't ignore this, but delete me partially"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			response, err := client.Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			body, err := ioutil.ReadAll(response.Body)
+			defer response.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(body) != "don't ignore this, but  partially" {
+				t.Errorf("Unexpected body: %#v", string(body))
+			}
+
+			// and quite importantly, the server should have received the right
+			// content-length
+			if !reflect.DeepEqual(lastRequest.Header["Content-Length"], []string{"33"}) {
+				t.Errorf("Unexpected header: %#v", lastRequest.Header["Content-Length"])
+			}
+
+			proxy.Stop()
+		})
+
+	t.Run("when the transformer sends back a longer body",
+		func(t *testing.T) {
+			proxy := NewProxy(proxyTarget, &TestTransformer{})
+			proxy.Start(proxyPort)
+
+			request, err := http.NewRequest("POST", echoUrl, bytes.NewBufferString("if you could double me...?"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			response, err := client.Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			body, err := ioutil.ReadAll(response.Body)
+			defer response.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(body) != "if you could double medouble me...?" {
+				t.Errorf("Unexpected body: %#v", string(body))
+			}
+
+			// and quite importantly, the server should have received the right
+			// content-length
+			if !reflect.DeepEqual(lastRequest.Header["Content-Length"], []string{"35"}) {
+				t.Errorf("Unexpected header: %#v", lastRequest.Header["Content-Length"])
+			}
+
+			proxy.Stop()
+		})
 
 	// now we can stop the server
 	httpServer.Shutdown(context.Background())

@@ -28,13 +28,13 @@ type HttpProxyRequestBodyTransformer interface {
 type HttpProxy struct {
 	Target      string
 	Server      *http.Server
-	Transformer *HttpProxyRequestBodyTransformer
+	Transformer HttpProxyRequestBodyTransformer
 	Client      *http.Client
 }
 
 // the target should include the protocol, e.g. http://localhost:8181
 // fine for the transformer to be nil
-func NewProxy(target string, transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
+func NewProxy(target string, transformer HttpProxyRequestBodyTransformer) *HttpProxy {
 	transport := &http.Transport{
 		DisableKeepAlives:   false,
 		MaxIdleConnsPerHost: 128,
@@ -62,7 +62,12 @@ func (proxy *HttpProxy) Start(localPort int) {
 		logInfo("HttpProxy listening on %v", addr)
 
 		if err := proxy.Server.ListenAndServe(); err != nil {
-			logFatal("HttpProxy crashed: %v", err.Error())
+			if err.Error() == "http: Server closed" {
+				// normal shutdown
+				logInfo("HttpProxy closed")
+			} else {
+				logFatal("HttpProxy crashed: %#v %T %#v", err.Error(), err, err)
+			}
 		}
 	}()
 }
@@ -131,7 +136,7 @@ func (proxy *HttpProxy) transformBody(request *http.Request) (io.ReadCloser, err
 	if proxy.Transformer == nil {
 		reader = request.Body
 	} else {
-		transformation, err := (*proxy.Transformer).process(request)
+		transformation, err := proxy.Transformer.process(request)
 		if err != nil {
 			return nil, err
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type HttpProxyAction int
@@ -25,13 +26,15 @@ type HttpProxyRequestBodyTransformer interface {
 }
 
 type HttpProxy struct {
+	Target      string
 	Server      *http.Server
 	Transformer *HttpProxyRequestBodyTransformer
 	Client      *http.Client
 }
 
+// the target should include the protocol, e.g. http://localhost:8181
 // fine for the transformer to be nil
-func NewProxy(transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
+func NewProxy(target string, transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
 	transport := &http.Transport{
 		DisableKeepAlives:   false,
 		MaxIdleConnsPerHost: 128,
@@ -39,6 +42,7 @@ func NewProxy(transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
 	client := &http.Client{Transport: transport}
 
 	proxy := &HttpProxy{
+		Target:      target,
 		Transformer: transformer,
 		Client:      client,
 	}
@@ -46,13 +50,12 @@ func NewProxy(transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
 	return proxy
 }
 
-func (proxy *HttpProxy) Start() {
+func (proxy *HttpProxy) Start(localPort int) {
 	if proxy.Server != nil {
 		logFatal("HttpProxy already started")
 	}
 
-	// TODO wkpo addr should be a param
-	addr := ":8081"
+	addr := ":" + strconv.Itoa(localPort)
 	proxy.Server = &http.Server{Addr: addr, Handler: proxy}
 
 	go func() {
@@ -74,6 +77,7 @@ func (proxy *HttpProxy) Stop() {
 	logInfo("HttpProxy gracefully shut down...")
 }
 
+// TODO wkpo refactor en fold?
 func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	// transform the body
 	transformedBody, err := proxy.transformBody(request)
@@ -88,19 +92,23 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 	defer transformedBody.Close()
 
 	// prepare the request
-	// TODO wkpo config for target...
-	clientReq, err := http.NewRequest(request.Method, "http://localhost:8181"+request.URL.Path, transformedBody)
+	clientRequest, err := http.NewRequest(request.Method, proxy.Target+request.URL.Path, transformedBody)
 	if maybeLogErrorAndReply(err, responseWriter, request, "Could not create client request") {
 		return
 	}
 
+	// copy the request headers
+	for key, value := range request.Header {
+		clientRequest.Header[key] = value
+	}
+
 	// make the request downstream
-	clientResponse, err := proxy.Client.Do(clientReq)
+	clientResponse, err := proxy.Client.Do(clientRequest)
 	if maybeLogErrorAndReply(err, responseWriter, request, "Unable to make HTTP request downstream") {
 		return
 	}
 
-	// copy the headers
+	// copy the response headers
 	responseHeaders := responseWriter.Header()
 	for key, value := range clientResponse.Header {
 		responseHeaders[key] = value

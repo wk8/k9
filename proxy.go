@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -25,6 +25,7 @@ type HttpProxyRequestBodyTransformer interface {
 }
 
 type HttpProxy struct {
+	Server      *http.Server
 	Transformer *HttpProxyRequestBodyTransformer
 	Client      *http.Client
 }
@@ -35,7 +36,6 @@ func NewProxy(transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
 		DisableKeepAlives:   false,
 		MaxIdleConnsPerHost: 128,
 	}
-
 	client := &http.Client{Transport: transport}
 
 	proxy := &HttpProxy{
@@ -47,12 +47,34 @@ func NewProxy(transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
 }
 
 func (proxy *HttpProxy) Start() {
-	http.HandleFunc("/", proxy.HandleRequest)
+	if proxy.Server != nil {
+		logFatal("HttpProxy already started")
+	}
 
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	// TODO wkpo addr should be a param
+	addr := ":8081"
+	proxy.Server = &http.Server{Addr: addr, Handler: proxy}
+
+	go func() {
+		logInfo("HttpProxy listening on %v", addr)
+
+		if err := proxy.Server.ListenAndServe(); err != nil {
+			logFatal("HttpProxy crashed: %v", err.Error())
+		}
+	}()
 }
 
-func (proxy *HttpProxy) HandleRequest(responseWriter http.ResponseWriter, request *http.Request) {
+func (proxy *HttpProxy) Stop() {
+	if proxy.Server == nil {
+		logFatal("HttpProxy not started yet")
+	}
+
+	logInfo("HttpProxy shutting down...")
+	proxy.Server.Shutdown(context.Background())
+	logInfo("HttpProxy gracefully shut down...")
+}
+
+func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	// transform the body
 	transformedBody, err := proxy.transformBody(request)
 	if maybeLogErrorAndReply(err, responseWriter, request, "Could not transform body") {

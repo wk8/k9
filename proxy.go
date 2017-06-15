@@ -47,10 +47,7 @@ func NewProxy(transformer *HttpProxyRequestBodyTransformer) *HttpProxy {
 }
 
 func (proxy *HttpProxy) Start() {
-	http.HandleFunc("/", func(responseWriter http.ResponseWriter, request *http.Request) {
-		// TODO wkpo pointer to func?
-		proxy.HandleRequest(responseWriter, request)
-	})
+	http.HandleFunc("/", proxy.HandleRequest)
 
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
@@ -127,7 +124,7 @@ func maybeLogErrorAndReply(err error, responseWriter http.ResponseWriter, reques
 		return false
 	} else {
 		logError("%v on path %v: %v", logPrefix, request.URL.Path, err.Error())
-		http.Error(responseWriter, "Internal k9 error"+err.Error(), 500)
+		http.Error(responseWriter, "Internal k9 error: "+err.Error(), 500)
 		return true
 	}
 }

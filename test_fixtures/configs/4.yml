@@ -1,0 +1,5 @@
+remove_tags:
+  - metrics:
+    - my_proj.elasticsearch.count
+    tags:
+    - host

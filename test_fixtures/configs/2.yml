@@ -1,0 +1,8 @@
+remove_metrics:
+  - my_proj.**.min
+
+remove_tags:
+  - metrics:
+    - my_proj.**
+    tags:
+    - role

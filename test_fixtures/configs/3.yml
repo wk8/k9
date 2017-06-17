@@ -1,0 +1,5 @@
+remove_metrics:
+  - my_proj.profile.**.95percentile
+  - my_proj.profile.**.median
+  - my_proj.profile.*.avg
+  - top_level_metric

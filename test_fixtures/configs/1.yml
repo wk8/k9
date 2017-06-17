@@ -1,0 +1,12 @@
+remove_metrics:
+  - my_proj.**.max
+
+remove_tags:
+  - metrics:
+    - my_proj.**
+    tags:
+    - role
+  - metrics:
+    - another_top_level_metric
+    tags:
+    - whatever

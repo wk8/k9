@@ -2,12 +2,13 @@ package main
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
 )
 
 func TestBaseConfig(t *testing.T) {
 	config := NewConfig()
-	config.mergeFromFile("test_fixtures/config.yml")
+	config.mergeFromFile("test_fixtures/configs/full.yml")
 
 	// my_proj.elasticsearch.count
 	configValue := config.ConfigFor("my_proj.elasticsearch.count")
@@ -31,6 +32,13 @@ func TestBaseConfig(t *testing.T) {
 
 	// my_proj.elasticsearch.time.max
 	configValue = config.ConfigFor("my_proj.elasticsearch.time.max")
+	expectedConfigValue = &ConfigValue{remove: true}
+	if !reflect.DeepEqual(configValue, expectedConfigValue) {
+		t.Errorf("Unexpected config value: %#v", configValue)
+	}
+
+	// my_proj.elasticsearch.time.min
+	configValue = config.ConfigFor("my_proj.elasticsearch.time.min")
 	expectedConfigValue = &ConfigValue{remove: true}
 	if !reflect.DeepEqual(configValue, expectedConfigValue) {
 		t.Errorf("Unexpected config value: %#v", configValue)
@@ -97,7 +105,7 @@ func TestBaseConfig(t *testing.T) {
 
 func TestCaching(t *testing.T) {
 	config := NewConfig()
-	config.mergeFromFile("test_fixtures/config.yml")
+	config.mergeFromFile("test_fixtures/configs/full.yml")
 
 	// the cache should be empty
 	expectedResolvedMetrics := map[string]*ConfigValue{}
@@ -124,5 +132,19 @@ func TestCaching(t *testing.T) {
 	configValue = config.ConfigFor("my_proj.test_caching")
 	if !reflect.DeepEqual(configValue, expectedConfigValue) {
 		t.Errorf("Unexpected config value: %#v", configValue)
+	}
+}
+
+func TestSeveralFiles(t *testing.T) {
+	configFromFull := NewConfig()
+	configFromFull.mergeFromFile("test_fixtures/configs/full.yml")
+
+	configFromPartials := NewConfig()
+	for i := 0; i <= 4; i++ {
+		configFromPartials.mergeFromFile("test_fixtures/configs/" + strconv.Itoa(i) + ".yml")
+	}
+
+	if !reflect.DeepEqual(configFromFull, configFromPartials) {
+		t.Errorf("Unexpected configs:\n%#v\nVS\n%#v", configFromFull, configFromPartials)
 	}
 }

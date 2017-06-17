@@ -6,6 +6,7 @@ import (
 )
 
 // TODO wkpo make this better... at least set a level?
+// TODO wkpo and set the level to error when testing
 
 func logDebug(format string, v ...interface{}) {
 	doLog("DEBUG", format, v...)

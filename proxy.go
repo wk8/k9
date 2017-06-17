@@ -22,7 +22,7 @@ type HttpProxyRequestBodyTransformation struct {
 }
 
 type HttpProxyRequestBodyTransformer interface {
-	process(*http.Request) (*HttpProxyRequestBodyTransformation, error)
+	Process(*http.Request) (*HttpProxyRequestBodyTransformation, error)
 }
 
 type HttpProxy struct {
@@ -135,7 +135,7 @@ func (proxy *HttpProxy) transformBody(request *http.Request) (io.Reader, error) 
 	if proxy.Transformer == nil {
 		reader = request.Body
 	} else {
-		transformation, err := proxy.Transformer.process(request)
+		transformation, err := proxy.Transformer.Process(request)
 		if err != nil {
 			return nil, err
 		}

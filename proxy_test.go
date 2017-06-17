@@ -334,7 +334,7 @@ func getFreePort() int {
 // a transformer that just lets everything through
 type DummyTransformer struct{}
 
-func (*DummyTransformer) process(*http.Request) (*HttpProxyRequestBodyTransformation, error) {
+func (*DummyTransformer) Process(*http.Request) (*HttpProxyRequestBodyTransformation, error) {
 	return &HttpProxyRequestBodyTransformation{Action: KEEP_AS_IS}, nil
 }
 
@@ -346,7 +346,7 @@ func (*DummyTransformer) process(*http.Request) (*HttpProxyRequestBodyTransforma
 //  * if none of the above applies, passes the request through as is
 type TestTransformer struct{}
 
-func (*TestTransformer) process(request *http.Request) (*HttpProxyRequestBodyTransformation, error) {
+func (*TestTransformer) Process(request *http.Request) (*HttpProxyRequestBodyTransformation, error) {
 	// read the body
 	bodyAsBytes, err := ioutil.ReadAll(request.Body)
 	defer request.Body.Close()

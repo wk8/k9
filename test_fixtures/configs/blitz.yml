@@ -1,0 +1,20 @@
+remove_metrics:
+  - blitz.**.max
+  - blitz.**.min
+  - blitz.profile.**.95percentile
+  - blitz.profile.**.median
+  - top_level_metric
+
+remove_tags:
+  - metrics:
+    - blitz.**
+    tags:
+    - role
+  - metrics:
+    - blitz.elasticsearch.count
+    tags:
+    - host
+  - metrics:
+    - another_top_level_metric
+    tags:
+    - whatever

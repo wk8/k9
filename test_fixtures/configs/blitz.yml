@@ -3,6 +3,7 @@ remove_metrics:
   - blitz.**.min
   - blitz.profile.**.95percentile
   - blitz.profile.**.median
+  - blitz.profile.*.avg
   - top_level_metric
 
 remove_tags:

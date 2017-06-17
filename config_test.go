@@ -94,3 +94,35 @@ func TestBaseConfig(t *testing.T) {
 		t.Errorf("Unexpected config value: %#v", configValue)
 	}
 }
+
+func TestCaching(t *testing.T) {
+	config := NewConfig()
+	config.mergeFromFile("test_fixtures/config.yml")
+
+	// the cache should be empty
+	expectedResolvedMetrics := map[string]*ConfigValue{}
+	if !reflect.DeepEqual(config.resolvedMetrics, expectedResolvedMetrics) {
+		t.Errorf("Unexpected cache: %#v", config.resolvedMetrics)
+	}
+
+	configValue := config.ConfigFor("my_proj.test_caching")
+	expectedConfigValue := &ConfigValue{
+		remove:       false,
+		tagsToRemove: map[string]bool{"role": true},
+	}
+	if !reflect.DeepEqual(configValue, expectedConfigValue) {
+		t.Errorf("Unexpected config value: %#v", configValue)
+	}
+
+	// now it should be in the cache
+	expectedResolvedMetrics["my_proj.test_caching"] = expectedConfigValue
+	if !reflect.DeepEqual(config.resolvedMetrics, expectedResolvedMetrics) {
+		t.Errorf("Unexpected cache: %#v", config.resolvedMetrics)
+	}
+
+	// calling a second time should yield the same value
+	configValue = config.ConfigFor("my_proj.test_caching")
+	if !reflect.DeepEqual(configValue, expectedConfigValue) {
+		t.Errorf("Unexpected config value: %#v", configValue)
+	}
+}

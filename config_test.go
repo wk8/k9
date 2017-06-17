@@ -7,10 +7,10 @@ import (
 
 func TestBaseConfig(t *testing.T) {
 	config := NewConfig()
-	config.mergeFromFile("test_fixtures/configs/blitz.yml")
+	config.mergeFromFile("test_fixtures/config.yml")
 
-	// blitz.elasticsearch.count
-	configValue := config.ConfigFor("blitz.elasticsearch.count")
+	// my_proj.elasticsearch.count
+	configValue := config.ConfigFor("my_proj.elasticsearch.count")
 	expectedConfigValue := &ConfigValue{
 		remove:       false,
 		tagsToRemove: map[string]bool{"role": true, "host": true},
@@ -19,8 +19,8 @@ func TestBaseConfig(t *testing.T) {
 		t.Errorf("Unexpected config value: %#v", configValue)
 	}
 
-	// blitz.elasticsearch.time.95percentile
-	configValue = config.ConfigFor("blitz.elasticsearch.time.95percentile")
+	// my_proj.elasticsearch.time.95percentile
+	configValue = config.ConfigFor("my_proj.elasticsearch.time.95percentile")
 	expectedConfigValue = &ConfigValue{
 		remove:       false,
 		tagsToRemove: map[string]bool{"role": true},
@@ -29,22 +29,22 @@ func TestBaseConfig(t *testing.T) {
 		t.Errorf("Unexpected config value: %#v", configValue)
 	}
 
-	// blitz.elasticsearch.time.max
-	configValue = config.ConfigFor("blitz.elasticsearch.time.max")
+	// my_proj.elasticsearch.time.max
+	configValue = config.ConfigFor("my_proj.elasticsearch.time.max")
 	expectedConfigValue = &ConfigValue{remove: true}
 	if !reflect.DeepEqual(configValue, expectedConfigValue) {
 		t.Errorf("Unexpected config value: %#v", configValue)
 	}
 
-	// blitz.profile.blitz_partner_order.distribution.time.95percentile
-	configValue = config.ConfigFor("blitz.profile.blitz_partner_order.distribution.time.95percentile")
+	// my_proj.profile.my_proj_partner_order.distribution.time.95percentile
+	configValue = config.ConfigFor("my_proj.profile.my_proj_partner_order.distribution.time.95percentile")
 	expectedConfigValue = &ConfigValue{remove: true}
 	if !reflect.DeepEqual(configValue, expectedConfigValue) {
 		t.Errorf("Unexpected config value: %#v", configValue)
 	}
 
-	// blitz.profile.something.95percentile
-	configValue = config.ConfigFor("blitz.profile.something.95percentile")
+	// my_proj.profile.something.95percentile
+	configValue = config.ConfigFor("my_proj.profile.something.95percentile")
 	expectedConfigValue = &ConfigValue{remove: true}
 	if !reflect.DeepEqual(configValue, expectedConfigValue) {
 		t.Errorf("Unexpected config value: %#v", configValue)
@@ -77,15 +77,15 @@ func TestBaseConfig(t *testing.T) {
 		t.Errorf("Unexpected config value: %#v", configValue)
 	}
 
-	// blitz.profile.something.avg
-	configValue = config.ConfigFor("blitz.profile.something.avg")
+	// my_proj.profile.something.avg
+	configValue = config.ConfigFor("my_proj.profile.something.avg")
 	expectedConfigValue = &ConfigValue{remove: true}
 	if !reflect.DeepEqual(configValue, expectedConfigValue) {
 		t.Errorf("Unexpected config value: %#v", configValue)
 	}
 
-	// blitz.profile.something.something.avg
-	configValue = config.ConfigFor("blitz.profile.something.something.avg")
+	// my_proj.profile.something.something.avg
+	configValue = config.ConfigFor("my_proj.profile.something.something.avg")
 	expectedConfigValue = &ConfigValue{
 		remove:       false,
 		tagsToRemove: map[string]bool{"role": true},

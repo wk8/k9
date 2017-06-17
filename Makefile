@@ -8,7 +8,7 @@ run:
 
 .PHONY: test
 test:
-	go test
+	go test -v
 
 # Runs a specific test suite
 # supports a regex as argument, as long as it only matches one suite
@@ -21,7 +21,7 @@ test_%:
 		[ -z "$$FIND_RESULT" ] && echo "No suite found with input '$*'" 1>&2 && exit 1; \
 		NB_MACTHES=$$(echo "$$FIND_RESULT" | wc -l) && [[ $$NB_MACTHES != 1 ]] && echo -e "Found $$NB_MACTHES suites matching input:\n$$FIND_RESULT" 1>&2 && exit 1; \
 		echo "$$FIND_RESULT"; \
-	fi) && COMMAND="go test $$SUITE $(SOURCES)" && echo $$COMMAND && eval $$COMMAND;
+	fi) && COMMAND="go test -v $$SUITE $(SOURCES)" && echo $$COMMAND && eval $$COMMAND;
 
 .PHONY: build
 build:

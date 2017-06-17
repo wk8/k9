@@ -16,5 +16,5 @@ package main
 
 func main() {
 	config := NewConfig()
-	config.mergeFromFile("test_fixtures/configs/blitz.yml")
+	config.mergeFromFile("test_fixtures/config.yml")
 }

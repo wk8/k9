@@ -8,7 +8,7 @@ import (
 
 func TestBaseConfig(t *testing.T) {
 	config := NewConfig()
-	config.mergeFromFile("test_fixtures/configs/full.yml")
+	config.MergeFromFile("test_fixtures/configs/full.yml")
 
 	// my_proj.elasticsearch.count
 	configValue := config.ConfigFor("my_proj.elasticsearch.count")
@@ -105,7 +105,7 @@ func TestBaseConfig(t *testing.T) {
 
 func TestCaching(t *testing.T) {
 	config := NewConfig()
-	config.mergeFromFile("test_fixtures/configs/full.yml")
+	config.MergeFromFile("test_fixtures/configs/full.yml")
 
 	// the cache should be empty
 	expectedResolvedMetrics := map[string]*ConfigValue{}
@@ -137,11 +137,11 @@ func TestCaching(t *testing.T) {
 
 func TestSeveralFiles(t *testing.T) {
 	configFromFull := NewConfig()
-	configFromFull.mergeFromFile("test_fixtures/configs/full.yml")
+	configFromFull.MergeFromFile("test_fixtures/configs/full.yml")
 
 	configFromPartials := NewConfig()
 	for i := 0; i <= 4; i++ {
-		configFromPartials.mergeFromFile("test_fixtures/configs/" + strconv.Itoa(i) + ".yml")
+		configFromPartials.MergeFromFile("test_fixtures/configs/" + strconv.Itoa(i) + ".yml")
 	}
 
 	if !reflect.DeepEqual(configFromFull, configFromPartials) {

@@ -354,6 +354,7 @@ func (*TestTransformer) Process(request *http.Request) (*HttpProxyRequestBodyTra
 		panic(err)
 	}
 	body := string(bodyAsBytes)
+	// restore the body for downstream
 	request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyAsBytes))
 
 	if strings.Contains(body, "ignore me") {

@@ -91,6 +91,7 @@ func NewConfig() (config *Config) {
 	}
 }
 
+// TODO wkpo make it public
 func (config *Config) mergeFromFile(filename string) error {
 	rawContent, err := ioutil.ReadFile(filename)
 	if err != nil {

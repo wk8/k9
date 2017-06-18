@@ -1,5 +1,6 @@
 # this config shoul be equivalent to the other 4
 # TODO wkpo more tests: a test on **, on *, on duplicated tags...
+# TODO wkpo rename config to pruningConfig
 
 remove_metrics:
   - my_proj.**.max

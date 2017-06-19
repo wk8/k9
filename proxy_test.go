@@ -46,6 +46,7 @@ func TestProxy(t *testing.T) {
 	httpServerPort := getFreePort()
 	addr := ":" + strconv.Itoa(httpServerPort)
 	httpServer := &http.Server{Addr: addr, Handler: &testServer{}}
+	previousLogLevel := setLogLevel(WARN)
 
 	go func() { httpServer.ListenAndServe() }()
 
@@ -314,6 +315,8 @@ func TestProxy(t *testing.T) {
 
 	// now we can stop the server
 	httpServer.Shutdown(context.Background())
+	// and restore the previous level of logging
+	setLogLevel(previousLogLevel)
 }
 
 // asks the kernel for a free open port that is ready to use

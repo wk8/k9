@@ -7,7 +7,7 @@ import (
 )
 
 func TestBaseConfig(t *testing.T) {
-	config := NewConfig()
+	config := NewPruningConfig()
 	config.MergeWithFile("test_fixtures/configs/full.yml")
 
 	// my_app.elasticsearch.count
@@ -124,7 +124,7 @@ func TestBaseConfig(t *testing.T) {
 }
 
 func TestCaching(t *testing.T) {
-	config := NewConfig()
+	config := NewPruningConfig()
 	config.MergeWithFile("test_fixtures/configs/full.yml")
 
 	// the cache should be empty
@@ -156,10 +156,10 @@ func TestCaching(t *testing.T) {
 }
 
 func TestSeveralFiles(t *testing.T) {
-	configFromFull := NewConfig()
+	configFromFull := NewPruningConfig()
 	configFromFull.MergeWithFile("test_fixtures/configs/full.yml")
 
-	configFromPartials := NewConfig()
+	configFromPartials := NewPruningConfig()
 	for i := 0; i <= 4; i++ {
 		configFromPartials.MergeWithFile("test_fixtures/configs/" + strconv.Itoa(i) + ".yml")
 	}

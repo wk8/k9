@@ -30,7 +30,7 @@ type MetricPruningConfig struct {
 	RemoveTags map[string]bool
 }
 
-func NewConfig() (config *PruningConfig) {
+func NewPruningConfig() (config *PruningConfig) {
 	return &PruningConfig{
 		root:            newConfigNode(),
 		resolvedMetrics: make(map[string]*MetricPruningConfig),

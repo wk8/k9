@@ -40,7 +40,7 @@ func main() {
 
 /*/
 func main() {
-	config := NewConfig()
+	config := NewPruningConfig()
 	config.MergeWithFile("test_fixtures/config.yml")
 }
 

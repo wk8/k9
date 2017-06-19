@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 	"testing"
@@ -71,6 +72,32 @@ func TestLogLevels(t *testing.T) {
 		}
 	})
 }
+
+func TestLogFatal(t *testing.T) {
+	// idea stolen from
+	// https://stackoverflow.com/questions/26225513/how-to-test-os-exit-scenarios-in-go
+	if os.Getenv("K9_TEST_LOG_FATAL") == "1" {
+		logFatal("hey teacher, leave those kids alone")
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestLogFatal")
+	cmd.Env = append(os.Environ(), "K9_TEST_LOG_FATAL=1")
+	var buffer bytes.Buffer
+	cmd.Stderr = &buffer
+
+	err := cmd.Run()
+
+	if e, ok := err.(*exec.ExitError); !ok || e.Success() {
+		t.Fatalf("Process ran with err %v, want exit status 1", err)
+	}
+	output := buffer.String()
+	if !checkLogLines(t, output, []string{"FATAL: hey teacher, leave those kids alone"}) {
+		t.Errorf("Unexpected output: %v", output)
+	}
+}
+
+// Private helpers
 
 func withCatpuredLogging(fun func()) string {
 	var buffer bytes.Buffer

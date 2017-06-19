@@ -15,7 +15,7 @@ const (
 	FATAL
 )
 
-var logLevel LogLevel = INFO
+var logLevel LogLevel = DEBUG // TODO wkpo INFO
 
 func setLogLevel(newLevel LogLevel) (previousLevel LogLevel) {
 	previousLevel = logLevel

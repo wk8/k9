@@ -2,10 +2,9 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
-
 	"context"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -85,8 +84,25 @@ func (proxy *HttpProxy) Stop() {
 	logInfo("HttpProxy gracefully shut down...")
 }
 
-// TODO wkpo refactor en fold?
 func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+	// some logging in debug mode
+	logDebugWith("Received %v request for %v with headers %#v and original body %v",
+		func() []interface{} {
+			// read the request
+			reqBodyAsBytes, err := ioutil.ReadAll(request.Body)
+			request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyAsBytes))
+			defer request.Body.Close()
+
+			var reqBody string
+			if err == nil {
+				reqBody = string(reqBodyAsBytes)
+			} else {
+				reqBody = "<error reading request body: " + err.Error() + ">"
+			}
+
+			return []interface{}{request.Method, request.URL.Path, request.Header, reqBody}
+		})
+
 	// transform the body
 	transformedBody, err := proxy.transformBody(request)
 	if maybeLogErrorAndReply(err, responseWriter, request, "Could not transform body") {
@@ -115,6 +131,24 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 		return
 	}
 
+	// let's log some
+	logDebugWith("%v request for %v received response with status %v, headers %#v and body %v",
+		func() []interface{} {
+			// read the request
+			respBodyAsBytes, err := ioutil.ReadAll(clientResponse.Body)
+			clientResponse.Body = ioutil.NopCloser(bytes.NewBuffer(respBodyAsBytes))
+			defer clientResponse.Body.Close()
+
+			var respBody string
+			if err == nil {
+				respBody = string(respBodyAsBytes)
+			} else {
+				respBody = "<error reading response body: " + err.Error() + ">"
+			}
+
+			return []interface{}{request.Method, request.URL.Path, clientResponse.StatusCode, clientResponse.Header, respBody}
+		})
+
 	// copy the response headers
 	responseHeaders := responseWriter.Header()
 	for key, value := range clientResponse.Header {
@@ -123,16 +157,6 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 
 	// copy the status code
 	responseWriter.WriteHeader(clientResponse.StatusCode)
-
-	// TODO wkpo remove that shit, revert e1dd08cfe01a545ee0549a6d8751cc092b00cd59
-	respBodyAsBytes, err := ioutil.ReadAll(clientResponse.Body)
-	defer clientResponse.Body.Close()
-	if maybeLogErrorAndReply(err, responseWriter, request, "Unable to read HTTP response wkpo") {
-		return
-	}
-	respBody := string(respBodyAsBytes)
-	logDebug("wkpo!! %v request for %v:\nresp body: %v\nand headers: %#v", request.Method, request.URL.Path, respBody, clientResponse.Header)
-	clientResponse.Body = ioutil.NopCloser(bytes.NewBuffer(respBodyAsBytes))
 
 	// copy the body
 	_, err = io.Copy(responseWriter, clientResponse.Body)

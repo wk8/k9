@@ -124,7 +124,7 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 	// copy the status code
 	responseWriter.WriteHeader(clientResponse.StatusCode)
 
-	// TODO wkpo remove that shit
+	// TODO wkpo remove that shit, revert e1dd08cfe01a545ee0549a6d8751cc092b00cd59
 	respBodyAsBytes, err := ioutil.ReadAll(clientResponse.Body)
 	defer clientResponse.Body.Close()
 	if maybeLogErrorAndReply(err, responseWriter, request, "Unable to read HTTP response wkpo") {

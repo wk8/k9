@@ -17,9 +17,6 @@ const (
 
 var logLevel LogLevel = INFO
 
-// TODO wkpo make this better... at least set a level?
-// TODO wkpo and set the level to error when testing
-
 func setLogLevel(newLevel LogLevel) (previousLevel LogLevel) {
 	previousLevel = logLevel
 	logLevel = newLevel

@@ -97,6 +97,35 @@ func TestLogFatal(t *testing.T) {
 	}
 }
 
+func TestLogDebugWith(t *testing.T) {
+	t.Run("when the log level is set to debug, it uses the callback to log",
+		func(t *testing.T) {
+			output := withLogLevelAndCapturedLogging(DEBUG, func() {
+				logDebugWith("%v %v - %v", func() []interface{} {
+					return []interface{}{"coucou", "toi", 28}
+				})
+			})
+
+			if !checkLogLines(t, output, []string{"DEBUG: coucou toi - 28"}) {
+				t.Errorf("Unexpected output: %v", output)
+			}
+		})
+
+	t.Run("when the log level is not set to debug, it doesn't run the callback",
+		func(t *testing.T) {
+			output := withLogLevelAndCapturedLogging(INFO, func() {
+				logDebugWith("%v %v - %v", func() []interface{} {
+					t.Fatalf("The callback is being called")
+					return []interface{}{}
+				})
+			})
+
+			if output != "" {
+				t.Errorf("Unexpected output: %v", output)
+			}
+		})
+}
+
 // Private helpers
 
 func withCatpuredLogging(fun func()) string {

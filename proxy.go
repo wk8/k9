@@ -85,10 +85,8 @@ func (proxy *HttpProxy) Stop() {
 }
 
 func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	// some logging in debug mode
 	logDebugWith("Received %v request for %v with headers %#v and original body %v",
 		func() []interface{} {
-			// read the request
 			reqBodyAsBytes, err := ioutil.ReadAll(request.Body)
 			request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyAsBytes))
 			defer request.Body.Close()
@@ -131,7 +129,6 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 		return
 	}
 
-	// let's log some
 	logDebugWith("%v request for %v received response with status %v, headers %#v and body %v",
 		func() []interface{} {
 			// read the request

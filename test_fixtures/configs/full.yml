@@ -1,6 +1,4 @@
 # this config shoul be equivalent to the other 4
-# TODO wkpo more tests: a test on **, on *, on duplicated tags...
-# TODO wkpo rename config to pruningConfig
 
 metrics:
   remove:
@@ -21,6 +19,7 @@ tags:
       - my_app.**
       tags:
       - role
+      - instance-type
     - metrics:
       - my_app.elasticsearch.count
       tags:
@@ -35,10 +34,11 @@ tags:
       - hide_this
     - metrics:
       - '*'
+      tags:
       - not_for_top_level_metrics
 
   keep:
     - metrics:
-      - hey.there
+      - my_app.hey.there
       tags:
       - hide_this

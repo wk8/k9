@@ -1,8 +1,15 @@
-remove_metrics:
-  - my_app.**.min
+metrics:
+  remove:
+    - my_app.**.min
 
-remove_tags:
-  - metrics:
-    - my_app.**
-    tags:
-    - role
+tags:
+  remove:
+    - metrics:
+      - my_app.**
+      tags:
+      - role
+      - instance-type
+    - metrics:
+      - '**'
+      tags:
+      - hide_this

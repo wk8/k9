@@ -1,12 +1,21 @@
-remove_metrics:
-  - my_app.**.max
+metrics:
+  remove:
+    - my_app.**.max
 
-remove_tags:
-  - metrics:
-    - my_app.**
-    tags:
-    - role
-  - metrics:
-    - another_top_level_metric
-    tags:
-    - whatever
+  keep:
+    - my_app.profile.some.important.function.median
+
+tags:
+  remove:
+    - metrics:
+      - my_app.**
+      tags:
+      - role
+    - metrics:
+      - another_top_level_metric
+      tags:
+      - whatever
+    - metrics:
+      - '*'
+      tags:
+      - not_for_top_level_metrics

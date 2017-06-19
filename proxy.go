@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
+
 	"context"
 	"io"
 	"net/http"
@@ -120,6 +123,16 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 
 	// copy the status code
 	responseWriter.WriteHeader(clientResponse.StatusCode)
+
+	// TODO wkpo remove that shit
+	respBodyAsBytes, err := ioutil.ReadAll(clientResponse.Body)
+	defer clientResponse.Body.Close()
+	if maybeLogErrorAndReply(err, responseWriter, request, "Unable to read HTTP response wkpo") {
+		return
+	}
+	respBody := string(respBodyAsBytes)
+	logDebug("wkpo!! %v request for %v:\nresp body: %v\nand headers: %#v", request.Method, request.URL.Path, respBody, clientResponse.Header)
+	clientResponse.Body = ioutil.NopCloser(bytes.NewBuffer(respBodyAsBytes))
 
 	// copy the body
 	_, err = io.Copy(responseWriter, clientResponse.Body)

@@ -2,24 +2,43 @@
 # TODO wkpo more tests: a test on **, on *, on duplicated tags...
 # TODO wkpo rename config to pruningConfig
 
-remove_metrics:
-  - my_proj.**.max
-  - my_proj.**.min
-  - my_proj.profile.**.95percentile
-  - my_proj.profile.**.median
-  - my_proj.profile.*.avg
-  - top_level_metric
+metrics:
+  remove:
+    - my_app.**.max
+    - my_app.**.min
+    - my_app.profile.**.95percentile
+    - my_app.profile.**.median
+    - my_app.profile.*.avg
+    - top_level_metric
 
-remove_tags:
-  - metrics:
-    - my_proj.**
-    tags:
-    - role
-  - metrics:
-    - my_proj.elasticsearch.count
-    tags:
-    - host
-  - metrics:
-    - another_top_level_metric
-    tags:
-    - whatever
+  keep:
+    - my_app.profile.some.important.function.95percentile
+    - my_app.profile.some.important.function.median
+
+tags:
+  remove:
+    - metrics:
+      - my_app.**
+      tags:
+      - role
+    - metrics:
+      - my_app.elasticsearch.count
+      tags:
+      - host
+    - metrics:
+      - another_top_level_metric
+      tags:
+      - whatever
+    - metrics:
+      - '**'
+      tags:
+      - hide_this
+    - metrics:
+      - '*'
+      - not_for_top_level_metrics
+
+  keep:
+    - metrics:
+      - hey.there
+      tags:
+      - hide_this

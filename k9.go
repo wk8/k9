@@ -41,7 +41,7 @@ func main() {
 /*/
 func main() {
 	config := NewConfig()
-	config.MergeFromFile("test_fixtures/config.yml")
+	config.MergeWithFile("test_fixtures/config.yml")
 }
 
 //*/

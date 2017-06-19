@@ -1,9 +1,9 @@
 remove_metrics:
-  - my_proj.**.max
+  - my_app.**.max
 
 remove_tags:
   - metrics:
-    - my_proj.**
+    - my_app.**
     tags:
     - role
   - metrics:

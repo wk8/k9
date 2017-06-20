@@ -3,13 +3,11 @@ package main
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
-
-	// TODO wkpo meh, pas vraiment besoin... ?
-	"github.com/bitly/go-simplejson"
 )
 
 type DDTransformer struct {
@@ -31,15 +29,16 @@ func (transformer *DDTransformer) processSeriesRequest(request *http.Request) er
 	}
 
 	// parse the JSON
-	json, err := simplejson.NewFromReader(reader)
-	defer reader.Close()
+	var jsonDocument map[string]interface{}
+	jsonDecoder := json.NewDecoder(reader)
+	err = jsonDecoder.Decode(&jsonDocument)
 	if err != nil {
 		return err
 	}
 
 	// transform the body
-	transformer.processSeriesRequestJson(json)
-	newBodyAsBytes, err := json.Encode()
+	transformer.processSeriesRequestJson(jsonDocument)
+	newBodyAsBytes, err := json.Marshal(jsonDocument)
 	if err != nil {
 		return err
 	}
@@ -67,10 +66,20 @@ func maybeDecodeBody(request *http.Request) (reader io.ReadCloser, encoded bool,
 	return
 }
 
-func (transformer *DDTransformer) processSeriesRequestJson(json *simplejson.Json) {
-	newSeries := []map[string]interface{}{}
+func (transformer *DDTransformer) processSeriesRequestJson(jsonDocument map[string]interface{}) {
+	rawSeries, present := jsonDocument["series"]
+	if !present {
+		logWarn("Missing the 'series' field in %#v", jsonDocument)
+		return
+	}
+	series, ok := rawSeries.([]interface{})
+	if !ok {
+		logWarn("'series' not an array %#v", jsonDocument)
+		return
+	}
 
-	for _, rawMetric := range json.Get("series").MustArray() {
+	newSeries := []map[string]interface{}{}
+	for _, rawMetric := range series {
 		metric, ok := rawMetric.(map[string]interface{})
 		if !ok {
 			logWarn("Unexpected metric in a series JSON (not an object): %#v", rawMetric)
@@ -88,8 +97,8 @@ func (transformer *DDTransformer) processSeriesRequestJson(json *simplejson.Json
 			continue
 		}
 
-		rawTags, tagsPresent := metric["tags"]
-		if tagsPresent {
+		rawTags, present := metric["tags"]
+		if present {
 			tags, ok := rawTags.([]interface{})
 			if !ok {
 				logWarn("Unexpected metric in a series JSON (tags): %#v", rawMetric)
@@ -120,7 +129,7 @@ func (transformer *DDTransformer) processSeriesRequestJson(json *simplejson.Json
 		newSeries = append(newSeries, metric)
 	}
 
-	json.Set("series", newSeries)
+	jsonDocument["series"] = newSeries
 }
 
 func encodeBody(body []byte) []byte {

@@ -36,6 +36,15 @@ func (transformer *DDTransformer) readBody(request *http.Request) error {
 	if len(contentEncoding) > 0 && contentEncoding[0] == "deflate" {
 		deflateReader := flate.NewReader(bytes.NewBuffer(bodyAsBytes))
 
+		tempFile, err := ioutil.TempFile("/tmp/", "k9-")
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(tempFile.Name(), bodyAsBytes, 0744)
+		if err != nil {
+			return err
+		}
+
 		bodyAsBytes, err = ioutil.ReadAll(deflateReader)
 		defer deflateReader.Close()
 		if err != nil {

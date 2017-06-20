@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"compress/flate"
+	"compress/zlib"
 	"io/ioutil"
 	"net/http"
 )
@@ -34,19 +34,13 @@ func (transformer *DDTransformer) readBody(request *http.Request) error {
 
 	contentEncoding := request.Header["Content-Encoding"]
 	if len(contentEncoding) > 0 && contentEncoding[0] == "deflate" {
-		deflateReader := flate.NewReader(bytes.NewBuffer(bodyAsBytes))
-
-		tempFile, err := ioutil.TempFile("/tmp/", "k9-")
-		if err != nil {
-			return err
-		}
-		err = ioutil.WriteFile(tempFile.Name(), bodyAsBytes, 0744)
+		zlibReader, err := zlib.NewReader(bytes.NewBuffer(bodyAsBytes))
 		if err != nil {
 			return err
 		}
 
-		bodyAsBytes, err = ioutil.ReadAll(deflateReader)
-		defer deflateReader.Close()
+		bodyAsBytes, err = ioutil.ReadAll(zlibReader)
+		defer zlibReader.Close()
 		if err != nil {
 			return err
 		}

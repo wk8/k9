@@ -107,14 +107,13 @@ func TestDDTransformerProcess(t *testing.T) {
 	t.Run("it cleanly errors out if not fed with a valid JSON", func(t *testing.T) {
 		body := "hey you"
 
-		request, err := http.NewRequest("GET", "http://localhost:8283/api/v1/series/", strings.NewReader(body))
+		request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", strings.NewReader(body))
 		if err != nil {
 			t.Fatal(err)
 		}
 		err = transformer.Process(request)
-		if err != nil {
-			// TODO wkpo ca devrait errorer la...
-			t.Fatal(err)
+		if err == nil {
+			t.Fatal("Didn't get an error")
 		}
 	})
 }

@@ -25,3 +25,5 @@ func main() {
 }
 
 //*/
+
+// TODO wkpo next https://github.com/golang/go/issues/10377 to read from k9-917742246

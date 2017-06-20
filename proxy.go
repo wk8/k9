@@ -85,21 +85,12 @@ func (proxy *HttpProxy) Stop() {
 }
 
 func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	logDebugWith("Received %v request for %v with headers %#v and original body %v",
-		func() []interface{} {
-			reqBodyAsBytes, err := ioutil.ReadAll(request.Body)
-			request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyAsBytes))
-			defer request.Body.Close()
-
-			var reqBody string
-			if err == nil {
-				reqBody = string(reqBodyAsBytes)
-			} else {
-				reqBody = "<error reading request body: " + err.Error() + ">"
-			}
-
-			return []interface{}{request.Method, request.URL.Path, request.Header, reqBody}
-		})
+	pathWithQuery := request.URL.Path
+	if len(request.URL.RawQuery) > 0 || request.URL.ForceQuery {
+		// TODO wkpo unit tests on this??
+		pathWithQuery += "?" + request.URL.RawQuery
+	}
+	logDebug("Received %v request for %v with headers %#v", request.Method, pathWithQuery, request.Header)
 
 	// transform the body
 	transformedBody, err := proxy.transformBody(request)
@@ -113,12 +104,7 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 	}
 
 	// prepare the request
-	var url = proxy.Target + request.URL.Path
-	// TODO wkpo unit test on this??
-	if len(request.URL.RawQuery) > 0 || request.URL.ForceQuery {
-		url += "?" + request.URL.RawQuery
-	}
-	clientRequest, err := http.NewRequest(request.Method, url, transformedBody)
+	clientRequest, err := http.NewRequest(request.Method, proxy.Target+pathWithQuery, transformedBody)
 	if maybeLogErrorAndReply(err, responseWriter, request, "Could not create client request") {
 		return
 	}
@@ -148,7 +134,7 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 				respBody = "<error reading response body: " + err.Error() + ">"
 			}
 
-			return []interface{}{request.Method, request.URL.Path, clientResponse.StatusCode, clientResponse.Header, respBody}
+			return []interface{}{request.Method, pathWithQuery, clientResponse.StatusCode, clientResponse.Header, respBody}
 		})
 
 	// copy the response headers

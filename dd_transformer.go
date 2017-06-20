@@ -17,7 +17,7 @@ type DDTransformer struct {
 }
 
 func (transformer *DDTransformer) Process(request *http.Request) error {
-	if request.URL.Path == "/api/v1/series/" {
+	if request.Method == "POST" && request.URL.Path == "/api/v1/series/" {
 		return transformer.processSeriesRequest(request)
 	}
 
@@ -88,9 +88,9 @@ func (transformer *DDTransformer) processSeriesRequestJson(json *simplejson.Json
 			continue
 		}
 
-		tags, tagsPresent := metric["tags"]
+		rawTags, tagsPresent := metric["tags"]
 		if tagsPresent {
-			tags, ok := tags.([]interface{})
+			tags, ok := rawTags.([]interface{})
 			if !ok {
 				logWarn("Unexpected metric in a series JSON (tags): %#v", rawMetric)
 				continue

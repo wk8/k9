@@ -20,6 +20,8 @@ const (
 type HttpProxyRequestBodyTransformation struct {
 	Action HttpProxyAction
 	// for any other action than TRANSFORM_BODY, transformedBody should be nil
+	// TODO wkpo pas besoin d'en faire un closer too?
+	// TODO wkpo en fait on devrait juste renvoyer une requete on 2nd thought...
 	TransformedBody io.Reader
 }
 

@@ -27,7 +27,7 @@ test_%:
 
 .PHONY: build
 build:
-	go build $(SOURCES)
+	go build -o k9 $(SOURCES)
 
 
 

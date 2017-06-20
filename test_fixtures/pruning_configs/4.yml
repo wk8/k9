@@ -3,7 +3,7 @@ tags:
     - metrics:
       - my_app.elasticsearch.count
       tags:
-      - host
+      - es_host
 
   keep:
     - metrics:

@@ -14,7 +14,7 @@ func TestBaseConfig(t *testing.T) {
 	pruningConfig := config.ConfigFor("my_app.elasticsearch.count")
 	expectedPruningConfig := &MetricPruningConfig{
 		Remove:     false,
-		RemoveTags: map[string]bool{"hide_this": true, "role": true, "instance-type": true, "host": true},
+		RemoveTags: map[string]bool{"hide_this": true, "role": true, "instance-type": true, "es_host": true},
 	}
 	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
 		t.Errorf("Unexpected pruning config: %#v", pruningConfig)

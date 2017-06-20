@@ -23,7 +23,7 @@ tags:
     - metrics:
       - my_app.elasticsearch.count
       tags:
-      - host
+      - es_host
     - metrics:
       - another_top_level_metric
       tags:

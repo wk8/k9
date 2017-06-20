@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"compress/zlib"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -67,6 +68,53 @@ func TestDDTransformerProcess(t *testing.T) {
 
 		if b := readBody(t, request); b != string(expectedBody) {
 			t.Errorf("Unexpected body: %v", b)
+		}
+	})
+
+	t.Run("it properly decodes and processes encoded requests", func(t *testing.T) {
+		rawContent, err := ioutil.ReadFile("test_fixtures/series_requests/encoded")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", bytes.NewReader(rawContent))
+		request.Header["Content-Encoding"] = []string{"deflate"}
+		err = transformer.Process(request)
+		if err != nil {
+			t.Fatal(nil)
+		}
+
+		// decode the body
+		reader, err := zlib.NewReader(request.Body)
+		if err != nil {
+			t.Fatal(nil)
+		}
+		decodedBody, err := ioutil.ReadAll(reader)
+		if err != nil {
+			panic(err)
+		}
+
+		expectedDecodedBody, err := ioutil.ReadFile("test_fixtures/series_requests/expected_result.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if b := string(decodedBody); string(expectedDecodedBody) != b {
+			t.Errorf("Unexpected body: %v", b)
+		}
+	})
+
+	t.Run("it cleanly errors out if not fed with a valid JSON", func(t *testing.T) {
+		body := "hey you"
+
+		request, err := http.NewRequest("GET", "http://localhost:8283/api/v1/series/", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = transformer.Process(request)
+		if err != nil {
+			// TODO wkpo ca devrait errorer la...
+			t.Fatal(err)
 		}
 	})
 }

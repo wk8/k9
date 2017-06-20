@@ -113,7 +113,12 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 	}
 
 	// prepare the request
-	clientRequest, err := http.NewRequest(request.Method, proxy.Target+request.URL.Path, transformedBody)
+	var url = proxy.Target + request.URL.Path
+	// TODO wkpo unit test on this??
+	if len(request.URL.RawQuery) > 0 || request.URL.ForceQuery {
+		url += "?" + request.URL.RawQuery
+	}
+	clientRequest, err := http.NewRequest(request.Method, url, transformedBody)
 	if maybeLogErrorAndReply(err, responseWriter, request, "Could not create client request") {
 		return
 	}

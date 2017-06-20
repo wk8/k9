@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 SOURCES = $(filter-out %_test.go, $(wildcard *.go))
 # TODO wkpo used?
 TESTS = $(wildcard *_test.go)

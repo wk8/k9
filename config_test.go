@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -41,7 +43,7 @@ func TestNewConfig(t *testing.T) {
 
 	t.Run("it logs warnings if one or more pruning config files can't be parsed", func(t *testing.T) {
 		output := WithCatpuredLogging(func() {
-			config = NewConfig("test_fixtures/configs/just_pruning_confs.yml", "")
+			config = NewConfig("test_fixtures/configs/just_pruning_confs_1.yml", "")
 		})
 
 		if !CheckLogLines(t, output, []string{"WARN: Unable to load pruning config from /i/dont/exist: open /i/dont/exist: no such file or directory"}) {
@@ -51,7 +53,7 @@ func TestNewConfig(t *testing.T) {
 		expectedConfig := &Config{
 			PruningConfig: expectedPruningConfig,
 
-			path:        "test_fixtures/configs/just_pruning_confs.yml",
+			path:        "test_fixtures/configs/just_pruning_confs_1.yml",
 			logLevelSet: false,
 		}
 
@@ -79,6 +81,19 @@ func TestNewConfigCrashesWhenFileDoesNotExist(t *testing.T) {
 	}
 }
 
+// tests that reloading re-parses the pruning config files
 func TestReload(t *testing.T) {
+	// let's get us a temp file to store configs in
+	temp_file, err := ioutil.TempFile("/tmp", "k9-test-reload-config-reload-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	temp_path := temp_file.Name()
+	err = os.Remove(temp_path)
 
+	// and let's put the 1st config in it
+	err = os.Link("test_fixtures/configs/just_pruning_confs_1.yml", temp_path)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

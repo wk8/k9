@@ -57,19 +57,23 @@ func TestProxy(t *testing.T) {
 
 	go func() { httpServer.ListenAndServe() }()
 
-	proxyPort := getFreePort()
 	proxyTarget := "http://localhost:" + httpServerPortAsStr
-	proxyBaseUrl := "http://localhost:" + strconv.Itoa(proxyPort) + "/"
-	pingUrl := proxyBaseUrl + "ping"
-	echoUrl := proxyBaseUrl + "echo"
+	startNewTestProxy := func(transformer RequestTransformer, optionalTimeouts ...time.Duration) (*HttpProxy, string) {
+		proxyPort := getFreePort()
+		proxyBaseUrl := "http://localhost:" + strconv.Itoa(proxyPort) + "/"
+
+		proxy := NewProxy(proxyTarget, transformer, optionalTimeouts...)
+		proxy.Start(proxyPort)
+
+		return proxy, proxyBaseUrl
+	}
 
 	// now to the real tests
 	t.Run("it successfully proxies",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, nil)
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(nil)
 
-			response, err := http.Get(pingUrl)
+			response, err := http.Get(proxyBaseUrl + "ping")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -88,10 +92,9 @@ func TestProxy(t *testing.T) {
 
 	t.Run("it preserves the status code",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, nil)
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(nil)
 
-			response, err := http.Get(pingUrl)
+			response, err := http.Get(proxyBaseUrl + "ping")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -119,10 +122,9 @@ func TestProxy(t *testing.T) {
 
 	t.Run("it preserves the headers in both directions",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, nil)
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(nil)
 
-			request, err := http.NewRequest("GET", pingUrl, nil)
+			request, err := http.NewRequest("GET", proxyBaseUrl+"ping", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -153,8 +155,7 @@ func TestProxy(t *testing.T) {
 
 	t.Run("it properly copies the query string",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, &DummyTransformer{})
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(&DummyTransformer{})
 
 			queryString := "hey=you&out=there"
 
@@ -179,10 +180,9 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer does nothing",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, &DummyTransformer{})
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(&DummyTransformer{})
 
-			request, err := http.NewRequest("POST", echoUrl, bytes.NewBufferString("hey"))
+			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("hey"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -207,12 +207,11 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer errors out",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, &TestTransformer{})
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(&TestTransformer{})
 
 			lastRequest = nil
 
-			request, err := http.NewRequest("POST", echoUrl, bytes.NewBufferString("sadly, error!"))
+			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("sadly, error!"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -244,10 +243,9 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer sends back a shorter body",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, &TestTransformer{})
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(&TestTransformer{})
 
-			request, err := http.NewRequest("POST", echoUrl, bytes.NewBufferString("don't ignore this, but delete me partially"))
+			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("don't ignore this, but delete me partially"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -271,10 +269,9 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer sends back a longer body",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, &TestTransformer{})
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(&TestTransformer{})
 
-			request, err := http.NewRequest("POST", echoUrl, bytes.NewBufferString("if you could double me...?"))
+			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("if you could double me...?"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -296,13 +293,13 @@ func TestProxy(t *testing.T) {
 			proxy.Stop()
 		})
 
-	t.Run("when the backend fails to connect before the timeout expires",
+	t.Run("when the backend fails to connect before the connect timeout expires",
 		func(t *testing.T) {
-			// idea stolen from https://stackoverflow.com/a/904609/4867444
+			proxyPort := getFreePort()
 			proxy := NewProxy("http://10.255.255.1", nil, 1*time.Millisecond)
 			proxy.Start(proxyPort)
 
-			response, err := http.Get(pingUrl)
+			response, err := http.Get("http://localhost:" + strconv.Itoa(proxyPort))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -317,7 +314,7 @@ func TestProxy(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if string(body) != "Internal k9 error: Get http://10.255.255.1/ping: dial tcp 10.255.255.1:80: i/o timeout\n" {
+			if string(body) != "Internal k9 error: Get http://10.255.255.1/: dial tcp 10.255.255.1:80: i/o timeout\n" {
 				t.Errorf("Unexpected body: %#v", string(body))
 			}
 
@@ -326,11 +323,9 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the backend fails to reply before the global timeout expires",
 		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, nil, 10*time.Second, 1*time.Millisecond)
-			proxy.Start(proxyPort)
+			proxy, proxyBaseUrl := startNewTestProxy(nil, 10*time.Second, 1*time.Millisecond)
 
-			sleepUrl := proxyBaseUrl + "sleep_25_ms"
-			response, err := http.Get(sleepUrl)
+			response, err := http.Get(proxyBaseUrl + "sleep_25_ms")
 			if err != nil {
 				t.Fatal(err)
 			}

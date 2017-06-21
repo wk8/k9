@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 type testServer struct{}
@@ -287,6 +288,34 @@ func TestProxy(t *testing.T) {
 				t.Fatal(err)
 			}
 			if string(body) != "if you could double medouble me...?" {
+				t.Errorf("Unexpected body: %#v", string(body))
+			}
+
+			proxy.Stop()
+		})
+
+	t.Run("when the backend fails to connect before the timeout expires",
+		func(t *testing.T) {
+			// idea stolen from https://stackoverflow.com/a/904609/4867444
+			proxy := NewProxy("http://10.255.255.1", nil, 1*time.Millisecond)
+			proxy.Start(proxyPort)
+
+			response, err := http.Get(pingUrl)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if response.StatusCode != 500 {
+				t.Errorf("Unexpected status code: %#v", response.StatusCode)
+			}
+
+			body, err := ioutil.ReadAll(response.Body)
+			defer response.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if string(body) != "Internal k9 error: Get http://10.255.255.1/ping: dial tcp 10.255.255.1:80: i/o timeout\n" {
 				t.Errorf("Unexpected body: %#v", string(body))
 			}
 

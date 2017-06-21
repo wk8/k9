@@ -23,13 +23,25 @@ type HttpProxy struct {
 }
 
 // the target should include the protocol, e.g. http://localhost:8181
-// fine for the transformer to be nil
-func NewProxy(target string, transformer RequestTransformer) *HttpProxy {
+// it is okay for the transformer to be nil
+func NewProxy(target string, transformer RequestTransformer, optionalConnectTimeout ...time.Duration) *HttpProxy {
+	var connectTimeout time.Duration
+	switch len(optionalConnectTimeout) {
+	case 0:
+		connectTimeout = 5 * time.Second
+	case 1:
+		connectTimeout = optionalConnectTimeout[0]
+	default:
+		panic("Too many arguments for NewProxy")
+	}
+
+	// TODO wkpo next global timeout, and test!!!!
 	transport := &http.Transport{
 		DisableKeepAlives:   true,
 		MaxIdleConnsPerHost: 128,
-		// TODO wkpo unit test on this, taking the timeout as an optional variadic arg...
-		Dial: dialTimeout,
+		Dial: func(network, addr string) (net.Conn, error) {
+			return net.DialTimeout(network, addr, connectTimeout)
+		},
 	}
 	client := &http.Client{Transport: transport}
 
@@ -40,10 +52,6 @@ func NewProxy(target string, transformer RequestTransformer) *HttpProxy {
 	}
 
 	return proxy
-}
-
-func dialTimeout(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, time.Duration(2*time.Second))
 }
 
 func (proxy *HttpProxy) Start(localPort int) {

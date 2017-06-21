@@ -68,9 +68,9 @@ func TestLogLevels(t *testing.T) {
 }
 
 func TestLogFatal(t *testing.T) {
-	output := AssertCrashes(t, func() {
+	output := AssertCrashes(t, "TestLogFatal", func() {
 		logFatal("hey teacher, leave those kids alone")
-	}, "TestLogFatal")
+	})
 
 	if !CheckLogLines(t, output, []string{"FATAL: hey teacher, leave those kids alone"}) {
 		t.Errorf("Unexpected output: %v", output)

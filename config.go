@@ -8,6 +8,8 @@ import (
 
 type Config struct {
 	PruningConfig *PruningConfig
+	ListenPort    int
+	DdUrl         string
 
 	path        string
 	logLevelSet bool
@@ -20,7 +22,10 @@ func NewConfig(path, logLevel string) *Config {
 		path = DEFAULT_K9_CONFIG_PATH
 	}
 
-	config := &Config{path: path}
+	config := &Config{
+		PruningConfig: NewPruningConfig(),
+		path:          path,
+	}
 	config.maybeSetLogLevel(logLevel)
 	config.load(true)
 
@@ -38,6 +43,8 @@ func (config *Config) maybeSetLogLevel(newLevel string) {
 
 type configFileContent struct {
 	Log_level       string
+	Dd_Url          string
+	Listen_port     int
 	Pruning_configs []string
 }
 
@@ -59,29 +66,23 @@ func (config *Config) load(initialLoad bool) {
 
 	config.maybeSetLogLevel(content.Log_level)
 	config.loadPruningConfig(content.Pruning_configs, initialLoad)
+
+	if initialLoad {
+		config.ListenPort = content.Listen_port
+		config.DdUrl = content.Dd_Url
+	}
 }
 
 func (config *Config) loadPruningConfig(pruningConfigsPaths []string, initialLoad bool) {
 	newPruningConfig := NewPruningConfig()
-	atLeastOneMerged := false
 
 	for _, pruningConfigPath := range pruningConfigsPaths {
 		err := newPruningConfig.MergeWithFile(pruningConfigPath)
 
-		if err == nil {
-			atLeastOneMerged = true
-		} else {
+		if err != nil {
 			logWarn("Unable to load pruning config from %v: %v", pruningConfigPath, err)
 		}
 	}
 
-	if atLeastOneMerged {
-		config.PruningConfig = newPruningConfig
-	} else {
-		if initialLoad {
-			logFatal("No pruning config file loaded; please fix your configuration, exiting")
-		} else {
-			logWarn("No pruning config file loaded, keeping the previous pruning configuration")
-		}
-	}
+	config.PruningConfig.Reset(newPruningConfig)
 }

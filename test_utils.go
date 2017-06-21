@@ -44,10 +44,10 @@ func CheckLogLines(t *testing.T, output string, expectedLines []string) bool {
 // idea stolen from
 // https://stackoverflow.com/questions/26225513/how-to-test-os-exit-scenarios-in-go
 // returns the output
-func AssertCrashes(t *testing.T, testCase func(), testCaseName string) string {
+func AssertCrashes(t *testing.T, testCaseName string, testCase func()) string {
 	if os.Getenv("K9_ASSERT_CRASHES") == "1" {
 		testCase()
-		return ""
+		return "<DID NOT CRASH!>"
 	}
 
 	cmd := exec.Command(os.Args[0], "-test.run="+testCaseName)

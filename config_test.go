@@ -23,6 +23,8 @@ func TestNewConfig(t *testing.T) {
 
 		expectedConfig := &Config{
 			PruningConfig: expectedPruningConfig,
+			ListenPort:    8284,
+			DdUrl:         "https://my_private.datadoghq.com",
 
 			path:        "test_fixtures/configs/all.yml",
 			logLevelSet: true,
@@ -30,6 +32,10 @@ func TestNewConfig(t *testing.T) {
 
 		if !reflect.DeepEqual(expectedConfig, config) {
 			t.Errorf("Unexpected config: %#v", config)
+		}
+
+		if logLevel != DEBUG {
+			t.Errorf("Unexpected log level: %v", logLevel)
 		}
 	})
 
@@ -54,9 +60,23 @@ func TestNewConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("it crashes with an explicit error if it's unable to build a pruning config", func(t *testing.T) {
+	t.Run("a log level passed as argument overrides what's in the config file", func(t *testing.T) {
+		config = NewConfig("test_fixtures/configs/all.yml", "warn")
 
+		if logLevel != WARN {
+			t.Errorf("Unexpected log level: %v", logLevel)
+		}
 	})
+}
+
+func TestNewConfigCrashesWhenFileDoesNotExist(t *testing.T) {
+	output := AssertCrashes(t, "TestNewConfigCrashesWhenFileDoesNotExist", func() {
+		NewConfig("i/dont/exist", "")
+	})
+
+	if !CheckLogLines(t, output, []string{"FATAL: Unable to read the config at i/dont/exist: open i/dont/exist: no such file or directory"}) {
+		t.Errorf("Unexpected output: %v", output)
+	}
 }
 
 func TestReload(t *testing.T) {

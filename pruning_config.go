@@ -37,6 +37,12 @@ func NewPruningConfig() (config *PruningConfig) {
 	}
 }
 
+// TODO wkpo unit tests!! at least on the behaviour
+func (config *PruningConfig) Reset(other *PruningConfig) {
+	config.root = other.root
+	config.resolvedMetrics = make(map[string]*MetricPruningConfig)
+}
+
 func (config *PruningConfig) ConfigFor(metric string) *MetricPruningConfig {
 	metricPruningConfig := config.resolvedMetrics[metric]
 

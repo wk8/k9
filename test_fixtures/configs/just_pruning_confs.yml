@@ -1,3 +1,4 @@
 pruning_configs:
   - test_fixtures/pruning_configs/1.yml
   - test_fixtures/pruning_configs/2.yml
+  - /i/dont/exist

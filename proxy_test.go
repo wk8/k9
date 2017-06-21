@@ -32,6 +32,8 @@ func (server *testServer) ServeHTTP(responseWriter http.ResponseWriter, request 
 		_, err = io.Copy(responseWriter, request.Body)
 	case "/echo_qs":
 		_, err = responseWriter.Write([]byte(request.URL.RawQuery))
+	case "/sleep_25_ms":
+		time.Sleep(25 * time.Millisecond)
 	default:
 		http.Error(responseWriter, "", 404)
 	}
@@ -49,14 +51,14 @@ var client = &http.Client{Transport: transport}
 func TestProxy(t *testing.T) {
 	// let's start a simple HTTP server to proxy against
 	httpServerPort := getFreePort()
-	addr := ":" + strconv.Itoa(httpServerPort)
-	httpServer := &http.Server{Addr: addr, Handler: &testServer{}}
-	previousLogLevel := setLogLevel(WARN)
+	httpServerPortAsStr := strconv.Itoa(httpServerPort)
+	httpServer := &http.Server{Addr: ":" + httpServerPortAsStr, Handler: &testServer{}}
+	previousLogLevel := setLogLevel(FATAL)
 
 	go func() { httpServer.ListenAndServe() }()
 
 	proxyPort := getFreePort()
-	proxyTarget := "http://localhost" + addr
+	proxyTarget := "http://localhost:" + httpServerPortAsStr
 	proxyBaseUrl := "http://localhost:" + strconv.Itoa(proxyPort) + "/"
 	pingUrl := proxyBaseUrl + "ping"
 	echoUrl := proxyBaseUrl + "echo"
@@ -322,11 +324,41 @@ func TestProxy(t *testing.T) {
 			proxy.Stop()
 		})
 
+	t.Run("when the backend fails to reply before the global timeout expires",
+		func(t *testing.T) {
+			proxy := NewProxy(proxyTarget, nil, 10*time.Second, 1*time.Millisecond)
+			proxy.Start(proxyPort)
+
+			sleepUrl := proxyBaseUrl + "sleep_25_ms"
+			response, err := http.Get(sleepUrl)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if response.StatusCode != 500 {
+				t.Errorf("Unexpected status code: %#v", response.StatusCode)
+			}
+
+			body, err := ioutil.ReadAll(response.Body)
+			defer response.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !strings.HasPrefix(string(body), "Internal k9 error: Get http://localhost:"+httpServerPortAsStr+"/sleep_25_ms: net/http: request canceled") {
+				t.Errorf("Unexpected body: %#v", string(body))
+			}
+
+			proxy.Stop()
+		})
+
 	// now we can stop the server
 	httpServer.Shutdown(context.Background())
 	// and restore the previous level of logging
 	setLogLevel(previousLogLevel)
 }
+
+// Private helpers
 
 // asks the kernel for a free open port that is ready to use
 func getFreePort() int {

@@ -24,13 +24,19 @@ type HttpProxy struct {
 
 // the target should include the protocol, e.g. http://localhost:8181
 // it is okay for the transformer to be nil
-func NewProxy(target string, transformer RequestTransformer, optionalConnectTimeout ...time.Duration) *HttpProxy {
-	var connectTimeout time.Duration
-	switch len(optionalConnectTimeout) {
-	case 0:
-		connectTimeout = 5 * time.Second
+// the optional timeouts are the connect and global timeouts for requests made
+// downstream, respectively defaulting to 5 and 20 secs
+func NewProxy(target string, transformer RequestTransformer, optionalTimeouts ...time.Duration) *HttpProxy {
+	connectTimeout := 5 * time.Second
+	globalTimeout := 20 * time.Second
+
+	switch len(optionalTimeouts) {
+	case 2:
+		globalTimeout = optionalTimeouts[1]
+		fallthrough
 	case 1:
-		connectTimeout = optionalConnectTimeout[0]
+		connectTimeout = optionalTimeouts[0]
+	case 0:
 	default:
 		panic("Too many arguments for NewProxy")
 	}
@@ -43,7 +49,10 @@ func NewProxy(target string, transformer RequestTransformer, optionalConnectTime
 			return net.DialTimeout(network, addr, connectTimeout)
 		},
 	}
-	client := &http.Client{Transport: transport}
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   globalTimeout,
+	}
 
 	proxy := &HttpProxy{
 		target:      target,

@@ -53,6 +53,10 @@ func TestNewConfig(t *testing.T) {
 			t.Errorf("Unexpected config: %#v", config)
 		}
 	})
+
+	t.Run("it crashes with an explicit error if it's unable to build a pruning config", func(t *testing.T) {
+
+	})
 }
 
 func TestReload(t *testing.T) {

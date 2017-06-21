@@ -2,11 +2,8 @@ package main
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"os/exec"
-	"regexp"
-	"strings"
 	"testing"
 )
 
@@ -19,7 +16,7 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !checkLogLines(t, output, []string{
+		if !CheckLogLines(t, output, []string{
 			"DEBUG: coucou toi - 28",
 			"INFO: hey you",
 			"WARN: getting lonely",
@@ -36,7 +33,7 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !checkLogLines(t, output, []string{
+		if !CheckLogLines(t, output, []string{
 			"INFO: hey you",
 			"WARN: getting lonely",
 			"ERROR: getting old"}) {
@@ -52,7 +49,7 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !checkLogLines(t, output, []string{
+		if !CheckLogLines(t, output, []string{
 			"WARN: getting lonely",
 			"ERROR: getting old"}) {
 			t.Errorf("Unexpected output: %v", output)
@@ -67,7 +64,7 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !checkLogLines(t, output, []string{"ERROR: getting old"}) {
+		if !CheckLogLines(t, output, []string{"ERROR: getting old"}) {
 			t.Errorf("Unexpected output: %v", output)
 		}
 	})
@@ -92,7 +89,7 @@ func TestLogFatal(t *testing.T) {
 		t.Fatalf("Process ran with err %v, want exit status 1", err)
 	}
 	output := buffer.String()
-	if !checkLogLines(t, output, []string{"FATAL: hey teacher, leave those kids alone"}) {
+	if !CheckLogLines(t, output, []string{"FATAL: hey teacher, leave those kids alone"}) {
 		t.Errorf("Unexpected output: %v", output)
 	}
 }
@@ -106,7 +103,7 @@ func TestLogDebugWith(t *testing.T) {
 				})
 			})
 
-			if !checkLogLines(t, output, []string{"DEBUG: coucou toi - 28"}) {
+			if !CheckLogLines(t, output, []string{"DEBUG: coucou toi - 28"}) {
 				t.Errorf("Unexpected output: %v", output)
 			}
 		})
@@ -131,7 +128,7 @@ func TestSetLogLevelFromString(t *testing.T) {
 
 	t.Run("it successfully parses and sets the level when fed a correct level",
 		func(t *testing.T) {
-			output := withCatpuredLogging(func() {
+			output := WithCatpuredLogging(func() {
 				setLogLevelFromString("DEBUG")
 			})
 
@@ -142,7 +139,7 @@ func TestSetLogLevelFromString(t *testing.T) {
 				t.Errorf("Unexpected output: %v", output)
 			}
 
-			output = withCatpuredLogging(func() {
+			output = WithCatpuredLogging(func() {
 				setLogLevelFromString("ERROR")
 			})
 
@@ -156,7 +153,7 @@ func TestSetLogLevelFromString(t *testing.T) {
 
 	t.Run("it is not case sensitive",
 		func(t *testing.T) {
-			output := withCatpuredLogging(func() {
+			output := WithCatpuredLogging(func() {
 				setLogLevelFromString("wARn")
 			})
 
@@ -171,11 +168,11 @@ func TestSetLogLevelFromString(t *testing.T) {
 	t.Run("if given an incorrect log level, returns an error and outputs a warning",
 		func(t *testing.T) {
 			var err error
-			output := withCatpuredLogging(func() {
+			output := WithCatpuredLogging(func() {
 				_, err = setLogLevelFromString("hey")
 			})
 
-			if !checkLogLines(t, output, []string{"WARN: Unknown log level, ignoring: hey"}) {
+			if !CheckLogLines(t, output, []string{"WARN: Unknown log level, ignoring: hey"}) {
 				t.Errorf("Unexpected output: %v", output)
 			}
 			if err == nil {
@@ -188,40 +185,9 @@ func TestSetLogLevelFromString(t *testing.T) {
 
 // Private helpers
 
-func withCatpuredLogging(fun func()) string {
-	var buffer bytes.Buffer
-	log.SetOutput(&buffer)
-	fun()
-	log.SetOutput(os.Stderr)
-	return buffer.String()
-}
-
 func withLogLevelAndCapturedLogging(logLevel LogLevel, fun func()) string {
 	previousLogLevel := setLogLevel(logLevel)
-	output := withCatpuredLogging(fun)
+	output := WithCatpuredLogging(fun)
 	setLogLevel(previousLogLevel)
 	return output
-}
-
-var logLineRegex = regexp.MustCompile("^[0-9]{4}(?:/[0-9]{2}){2} [0-9]{2}(?::[0-9]{2}){2} (?P<Rest>.*)$")
-
-func checkLogLines(t *testing.T, output string, expectedLines []string) bool {
-	output = strings.TrimSpace(output)
-	actualLines := strings.Split(output, "\n")
-
-	if len(expectedLines) != len(actualLines) {
-		t.Errorf("Different number of lines: %v VS %v in %#v", len(expectedLines), len(actualLines), actualLines)
-		return false
-	}
-
-	for i, line := range expectedLines {
-		match := logLineRegex.FindStringSubmatch(actualLines[i])
-
-		if match == nil || match[1] != line {
-			t.Errorf("Unexpected line at position %v: %v", i, actualLines[i])
-			return false
-		}
-	}
-
-	return true
 }

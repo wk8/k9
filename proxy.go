@@ -28,7 +28,8 @@ func NewProxy(target string, transformer RequestTransformer) *HttpProxy {
 	transport := &http.Transport{
 		DisableKeepAlives:   true,
 		MaxIdleConnsPerHost: 128,
-		Dial:                dialTimeout,
+		// TODO wkpo unit test on this, taking the timeout as an optional variadic arg...
+		Dial: dialTimeout,
 	}
 	client := &http.Client{Transport: transport}
 

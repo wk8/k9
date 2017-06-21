@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 type LogLevel int
@@ -15,12 +19,42 @@ const (
 	FATAL
 )
 
-var logLevel LogLevel = DEBUG // TODO wkpo INFO
+const DEFAULT_LOG_LEVEL = INFO
+
+var logLevel LogLevel = DEFAULT_LOG_LEVEL
 
 func setLogLevel(newLevel LogLevel) (previousLevel LogLevel) {
 	previousLevel = logLevel
 	logLevel = newLevel
 	return
+}
+
+// TODO wkpo unit tests
+func setLogLevelFromString(newLevelAsStr string) (LogLevel, err) {
+	var newLevel LogLevel = -1
+
+	switch strings.ToUpper(newLevel) {
+	case "DEBUG":
+		newLevel = DEBUG
+	case "INFO":
+		newLevel = INFO
+	case "WARN":
+		newLevel = WARN
+	case "ERROR":
+		newLevel = ERROR
+	case "FATAL":
+		newLevel = FATAL
+	}
+
+	if newLevel == -1 {
+		var buffer bytes.Buffer
+		fmt.Fprintf(&buffer, "Unknown log level, ignoring: %v", newLevel)
+		message := buffer.String()
+		logWarn(message)
+		return logLevel, errors.New(message)
+	} else {
+		return setLogLevel(newLevel), nil
+	}
 }
 
 // comes in handy to log expensive operations in debug mode

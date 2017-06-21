@@ -1,0 +1,7 @@
+# should be one of DEBUG, INFO, WARN, ERROR or FATAL
+log_level: DEBUG
+
+# should be a list of paths to pruning configs
+pruning_configs:
+  - /etc/k9/pruning.conf
+  - /opt/my_app/k9_pruning.conf

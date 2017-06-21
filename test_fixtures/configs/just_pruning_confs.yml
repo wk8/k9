@@ -1,0 +1,3 @@
+pruning_configs:
+  - /etc/k9/pruning.conf
+  - /opt/my_app/k9_pruning.conf

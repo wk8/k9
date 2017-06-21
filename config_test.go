@@ -90,10 +90,63 @@ func TestReload(t *testing.T) {
 	}
 	temp_path := temp_file.Name()
 	err = os.Remove(temp_path)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// and let's put the 1st config in it
 	err = os.Link("test_fixtures/configs/just_pruning_confs_1.yml", temp_path)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// and let's load it!
+	config := NewConfig(temp_path, "")
+
+	// now let's keep a pointer to the pruning config
+	pruningConfig := config.PruningConfig
+
+	expectedPruningConfig1 := NewPruningConfig()
+	expectedPruningConfig1.MergeWithFile("test_fixtures/pruning_configs/1.yml")
+	expectedPruningConfig1.MergeWithFile("test_fixtures/pruning_configs/2.yml")
+
+	if !reflect.DeepEqual(expectedPruningConfig1, config.PruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", config.PruningConfig)
+	}
+
+	// and let's have the config reload, that shouldn't change anything
+	config.Reload()
+
+	if !reflect.DeepEqual(expectedPruningConfig1, config.PruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", config.PruningConfig)
+	}
+	if config.PruningConfig != pruningConfig {
+		t.Errorf("Config pointing to a different pruning config")
+	}
+
+	// now let's replace the config with the 2nd one
+	err = os.Remove(temp_path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Link("test_fixtures/configs/just_pruning_confs_2.yml", temp_path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// and reload the config
+	config.Reload()
+
+	expectedPruningConfig2 := NewPruningConfig()
+	expectedPruningConfig2.MergeWithFile("test_fixtures/pruning_configs/3.yml")
+	expectedPruningConfig2.MergeWithFile("test_fixtures/pruning_configs/4.yml")
+
+	if !reflect.DeepEqual(expectedPruningConfig2, config.PruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", config.PruningConfig)
+	}
+	// but must importantly, the pruning config should be at the same place in
+	// memory!
+	if config.PruningConfig != pruningConfig {
+		t.Errorf("Config pointing to a different pruning config")
 	}
 }

@@ -30,10 +30,10 @@ func setLogLevel(newLevel LogLevel) (previousLevel LogLevel) {
 }
 
 // TODO wkpo unit tests
-func setLogLevelFromString(newLevelAsStr string) (LogLevel, err) {
+func setLogLevelFromString(newLevelAsStr string) (LogLevel, error) {
 	var newLevel LogLevel = -1
 
-	switch strings.ToUpper(newLevel) {
+	switch strings.ToUpper(newLevelAsStr) {
 	case "DEBUG":
 		newLevel = DEBUG
 	case "INFO":

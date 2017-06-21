@@ -23,16 +23,20 @@ func (server *testServer) ServeHTTP(responseWriter http.ResponseWriter, request 
 
 	responseWriter.Header()["X-Foo"] = []string{"bar"}
 
+	var err error
 	switch request.URL.Path {
 	case "/ping":
-		responseWriter.Write([]byte("pong"))
+		_, err = responseWriter.Write([]byte("pong"))
 	case "/echo":
-		_, err := io.Copy(responseWriter, request.Body)
-		if err != nil {
-			panic(err)
-		}
+		_, err = io.Copy(responseWriter, request.Body)
+	case "/echo_qs":
+		_, err = responseWriter.Write([]byte(request.URL.RawQuery))
 	default:
 		http.Error(responseWriter, "", 404)
+	}
+
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -144,7 +148,33 @@ func TestProxy(t *testing.T) {
 			proxy.Stop()
 		})
 
-	t.Run("when the transformer just passes everything along",
+	t.Run("it properly copies the query string",
+		func(t *testing.T) {
+			proxy := NewProxy(proxyTarget, &DummyTransformer{})
+			proxy.Start(proxyPort)
+
+			queryString := "hey=you&out=there"
+
+			request, err := http.NewRequest("GET", proxyBaseUrl+"echo_qs?"+queryString, nil)
+
+			response, err := client.Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, err := ioutil.ReadAll(response.Body)
+			defer response.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if string(body) != queryString {
+				t.Errorf("Unexpected body: %#v", string(body))
+			}
+
+			proxy.Stop()
+		})
+
+	t.Run("when the transformer does nothing",
 		func(t *testing.T) {
 			proxy := NewProxy(proxyTarget, &DummyTransformer{})
 			proxy.Start(proxyPort)
@@ -167,44 +197,6 @@ func TestProxy(t *testing.T) {
 
 			if string(body) != "hey" {
 				t.Errorf("Unexpected body: %#v", string(body))
-			}
-
-			proxy.Stop()
-		})
-
-	t.Run("when the transformer says to ignore the request",
-		func(t *testing.T) {
-			proxy := NewProxy(proxyTarget, &TestTransformer{})
-			proxy.Start(proxyPort)
-
-			lastRequest = nil
-
-			request, err := http.NewRequest("POST", echoUrl, bytes.NewBufferString("hey, ignore me!"))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			response, err := client.Do(request)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// should reply with an empty 200
-			if response.StatusCode != 200 {
-				t.Errorf("Unexpected status code: %#v", response.StatusCode)
-			}
-			body, err := ioutil.ReadAll(response.Body)
-			defer response.Body.Close()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(body) != "" {
-				t.Errorf("Unexpected body: %#v", string(body))
-			}
-
-			// and the server shouldn't have received any request
-			if lastRequest != nil {
-				t.Errorf("The server did receive a request")
 			}
 
 			proxy.Stop()
@@ -271,12 +263,6 @@ func TestProxy(t *testing.T) {
 				t.Errorf("Unexpected body: %#v", string(body))
 			}
 
-			// and quite importantly, the server should have received the right
-			// content-length
-			if !reflect.DeepEqual(lastRequest.Header["Content-Length"], []string{"33"}) {
-				t.Errorf("Unexpected header: %#v", lastRequest.Header["Content-Length"])
-			}
-
 			proxy.Stop()
 		})
 
@@ -304,12 +290,6 @@ func TestProxy(t *testing.T) {
 				t.Errorf("Unexpected body: %#v", string(body))
 			}
 
-			// and quite importantly, the server should have received the right
-			// content-length
-			if !reflect.DeepEqual(lastRequest.Header["Content-Length"], []string{"35"}) {
-				t.Errorf("Unexpected header: %#v", lastRequest.Header["Content-Length"])
-			}
-
 			proxy.Stop()
 		})
 
@@ -334,22 +314,21 @@ func getFreePort() int {
 	return listen.Addr().(*net.TCPAddr).Port
 }
 
-// a transformer that just lets everything through
+// a transformer that does nothing
 type DummyTransformer struct{}
 
-func (*DummyTransformer) Process(*http.Request) (*HttpProxyRequestBodyTransformation, error) {
-	return &HttpProxyRequestBodyTransformation{Action: KEEP_AS_IS}, nil
+func (*DummyTransformer) Transform(*http.Request) error {
+	return nil
 }
 
-// a more complicated transformer:
-//  * if the body contains "ignore me", then ignores that request
+// a slightly more complicated transformer:
 //  * if the body contains "error!", then returns an error
 //  * any occurence of "delete me" in the body is removed, any occurence of
 //    "double me" is doubled
-//  * if none of the above applies, passes the request through as is
+//  * if none of the above applies, does nothing
 type TestTransformer struct{}
 
-func (*TestTransformer) Process(request *http.Request) (*HttpProxyRequestBodyTransformation, error) {
+func (*TestTransformer) Transform(request *http.Request) error {
 	// read the body
 	bodyAsBytes, err := ioutil.ReadAll(request.Body)
 	defer request.Body.Close()
@@ -357,23 +336,14 @@ func (*TestTransformer) Process(request *http.Request) (*HttpProxyRequestBodyTra
 		panic(err)
 	}
 	body := string(bodyAsBytes)
-	// restore the body for downstream
-	request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyAsBytes))
 
-	if strings.Contains(body, "ignore me") {
-		return &HttpProxyRequestBodyTransformation{Action: IGNORE_REQUEST}, nil
-	}
 	if strings.Contains(body, "error!") {
-		return nil, errors.New("dummy error")
+		return errors.New("dummy error")
 	}
 
-	newBody := strings.Replace(body, "delete me", "", -1)
-	newBody = strings.Replace(newBody, "double me", "double medouble me", -1)
+	body = strings.Replace(body, "delete me", "", -1)
+	body = strings.Replace(body, "double me", "double medouble me", -1)
 
-	if newBody == body {
-		return &HttpProxyRequestBodyTransformation{Action: KEEP_AS_IS}, nil
-	} else {
-		return &HttpProxyRequestBodyTransformation{Action: TRANSFORM_BODY,
-			TransformedBody: strings.NewReader(newBody)}, nil
-	}
+	request.Body = ioutil.NopCloser(strings.NewReader(body))
+	return nil
 }

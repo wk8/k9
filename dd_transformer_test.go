@@ -9,8 +9,6 @@ import (
 	"testing"
 )
 
-// TODO wkpo test on invalid JSON
-
 func TestDDTransformerProcess(t *testing.T) {
 	config := NewPruningConfig()
 	config.MergeWithFile("test_fixtures/pruning_configs/full.yml")
@@ -23,7 +21,7 @@ func TestDDTransformerProcess(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = transformer.Process(request)
+		err = transformer.Transform(request)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -36,7 +34,7 @@ func TestDDTransformerProcess(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = transformer.Process(request)
+		err = transformer.Transform(request)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -56,7 +54,7 @@ func TestDDTransformerProcess(t *testing.T) {
 		if err != nil {
 			t.Fatal(nil)
 		}
-		err = transformer.Process(request)
+		err = transformer.Transform(request)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +77,7 @@ func TestDDTransformerProcess(t *testing.T) {
 
 		request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", bytes.NewReader(rawContent))
 		request.Header["Content-Encoding"] = []string{"deflate"}
-		err = transformer.Process(request)
+		err = transformer.Transform(request)
 		if err != nil {
 			t.Fatal(nil)
 		}
@@ -111,7 +109,7 @@ func TestDDTransformerProcess(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = transformer.Process(request)
+		err = transformer.Transform(request)
 		if err == nil {
 			t.Fatal("Didn't get an error")
 		}

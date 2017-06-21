@@ -14,15 +14,15 @@ type DDTransformer struct {
 	config *PruningConfig
 }
 
-func (transformer *DDTransformer) Process(request *http.Request) error {
+func (transformer *DDTransformer) Transform(request *http.Request) error {
 	if request.Method == "POST" && request.URL.Path == "/api/v1/series/" {
-		return transformer.processSeriesRequest(request)
+		return transformer.transformSeriesRequest(request)
 	}
 
 	return nil
 }
 
-func (transformer *DDTransformer) processSeriesRequest(request *http.Request) error {
+func (transformer *DDTransformer) transformSeriesRequest(request *http.Request) error {
 	reader, encoded, err := maybeDecodeBody(request)
 	if err != nil {
 		return err
@@ -37,7 +37,7 @@ func (transformer *DDTransformer) processSeriesRequest(request *http.Request) er
 	}
 
 	// transform the body
-	transformer.processSeriesRequestJson(jsonDocument)
+	transformer.transformSeriesRequestJson(jsonDocument)
 	newBodyAsBytes, err := json.Marshal(jsonDocument)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func maybeDecodeBody(request *http.Request) (reader io.ReadCloser, encoded bool,
 	return
 }
 
-func (transformer *DDTransformer) processSeriesRequestJson(jsonDocument map[string]interface{}) {
+func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[string]interface{}) {
 	rawSeries, present := jsonDocument["series"]
 	if !present {
 		logWarn("Missing the 'series' field in %#v", jsonDocument)

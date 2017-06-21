@@ -126,6 +126,66 @@ func TestLogDebugWith(t *testing.T) {
 		})
 }
 
+func TestSetLogLevelFromString(t *testing.T) {
+	previousLogLevel := logLevel
+
+	t.Run("it successfully parses and sets the level when fed a correct level",
+		func(t *testing.T) {
+			output := withCatpuredLogging(func() {
+				setLogLevelFromString("DEBUG")
+			})
+
+			if logLevel != DEBUG {
+				t.Errorf("Unexpected log level: %v", logLevel)
+			}
+			if output != "" {
+				t.Errorf("Unexpected output: %v", output)
+			}
+
+			output = withCatpuredLogging(func() {
+				setLogLevelFromString("ERROR")
+			})
+
+			if logLevel != ERROR {
+				t.Errorf("Unexpected log level: %v", logLevel)
+			}
+			if output != "" {
+				t.Errorf("Unexpected output: %v", output)
+			}
+		})
+
+	t.Run("it is not case sensitive",
+		func(t *testing.T) {
+			output := withCatpuredLogging(func() {
+				setLogLevelFromString("wARn")
+			})
+
+			if logLevel != WARN {
+				t.Errorf("Unexpected log level: %v", logLevel)
+			}
+			if output != "" {
+				t.Errorf("Unexpected output: %v", output)
+			}
+		})
+
+	t.Run("if given an incorrect log level, returns an error and outputs a warning",
+		func(t *testing.T) {
+			var err error
+			output := withCatpuredLogging(func() {
+				_, err = setLogLevelFromString("hey")
+			})
+
+			if !checkLogLines(t, output, []string{"WARN: Unknown log level, ignoring: hey"}) {
+				t.Errorf("Unexpected output: %v", output)
+			}
+			if err == nil {
+				t.Errorf("Should have errored out")
+			}
+		})
+
+	setLogLevel(previousLogLevel)
+}
+
 // Private helpers
 
 func withCatpuredLogging(fun func()) string {

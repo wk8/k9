@@ -29,7 +29,6 @@ func setLogLevel(newLevel LogLevel) (previousLevel LogLevel) {
 	return
 }
 
-// TODO wkpo unit tests
 func setLogLevelFromString(newLevelAsStr string) (LogLevel, error) {
 	var newLevel LogLevel = -1
 
@@ -48,7 +47,7 @@ func setLogLevelFromString(newLevelAsStr string) (LogLevel, error) {
 
 	if newLevel == -1 {
 		var buffer bytes.Buffer
-		fmt.Fprintf(&buffer, "Unknown log level, ignoring: %v", newLevel)
+		fmt.Fprintf(&buffer, "Unknown log level, ignoring: %v", newLevelAsStr)
 		message := buffer.String()
 		logWarn(message)
 		return logLevel, errors.New(message)

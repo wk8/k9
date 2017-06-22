@@ -41,7 +41,6 @@ func NewProxy(target string, transformer RequestTransformer, optionalTimeouts ..
 		panic("Too many arguments for NewProxy")
 	}
 
-	// TODO wkpo next global timeout, and test!!!!
 	transport := &http.Transport{
 		DisableKeepAlives:   true,
 		MaxIdleConnsPerHost: 128,

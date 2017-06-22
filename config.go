@@ -15,13 +15,7 @@ type Config struct {
 	logLevelSet bool
 }
 
-const DEFAULT_K9_CONFIG_PATH = "/etc/k9/k9.conf"
-
 func NewConfig(path, logLevel string) *Config {
-	if path == "" {
-		path = DEFAULT_K9_CONFIG_PATH
-	}
-
 	config := &Config{
 		PruningConfig: NewPruningConfig(),
 		path:          path,

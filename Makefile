@@ -9,7 +9,7 @@ run:
 
 .PHONY: test
 test:
-	go test -v -cover -race
+	go test -v -cover
 
 # Runs a specific test suite
 # supports a regex as argument, as long as it only matches one suite

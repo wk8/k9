@@ -60,8 +60,14 @@ func signalListenerTest(t *testing.T, testCaseName string, signals ...os.Signal)
 	}
 
 	for _, signal := range signals {
-		// needed to let the child process signals
-		time.Sleep(10 * time.Millisecond)
+		// needed to let the child process signals, and need a longer one
+		// in circle...
+		signalInterval := 10 * time.Millisecond
+		if _, isCircle := os.LookupEnv("CIRCLECI"); isCircle {
+			signalInterval = 250 * time.Millisecond
+		}
+		time.Sleep(signalInterval)
+
 		child.Signal(signal)
 	}
 

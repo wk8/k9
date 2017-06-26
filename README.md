@@ -15,7 +15,7 @@ k9 aims to solve these issues by providing a very simple way to filter out the m
 
 ## How?
 
-k9 is a very simple HTTP proxy that should sit in between the agent and Datadog's API on every host you want to use it on. It reads a very simple configuration file to know which metrics/tags to remove:
+k9 is a very simple HTTP proxy that should sit in between the agent and Datadog's API on every host you want to use it on. It reads a very simple YML configuration file to know which metrics/tags to remove (all the fields are optional):
 
 ```yml
 # should be one of DEBUG, INFO, WARN, ERROR or FATAL - defaults to INFO if not present
@@ -36,4 +36,51 @@ dd_url: https://my_private.datadoghq.com
 
 ```
 
+where `pruning_configs` should be a list of paths to k9 _pruning configurations_, which should have the following shape:
 
+```yml
+metrics:
+  # matching metrics will be removed altogether (except if they also match a `keep` rule)
+  remove:
+    - my_app.**.max
+    - my_app.**.min
+    - my_app.profile.**.95percentile
+    - my_app.profile.**.median
+    - my_app.profile.*.avg
+    - a.given.metric
+
+  # matching metrics will be kept even if they match a `remove` rule
+  keep:
+    - my_app.profile.some.important.function.95percentile
+    - my_app.profile.some.important.function.median
+
+tags:
+  # matching metrics will have the given tags removed if present
+  # (except if they also match a `keep` rule for the same tag(s))
+  remove:
+    - metrics:
+      - my_app.**
+      tags:
+      - instance-type
+    - metrics:
+      - my_app.elasticsearch.count
+      tags:
+      - es_host
+    - metrics:
+      - '**'
+      tags:
+      - role
+
+  # matching metrics will have the given tags kept if present
+  # even if they also match a `remove` rule for the same tag(s)
+  keep:
+    - metrics:
+      - my_app.hey.there
+      tags:
+      - instance-type
+
+```
+
+where double wildcards `**` will match one or more "sub-keys", e.g. `my_app.**.max` in the example above will match all of `my_app.a.max`, `my_app.a.b.max`, `my_app.a.b.c.max`, and so on; while single wildcards only match one "sub-key", e.g. `my_app.profile.*.avg` will match `my_app.profile.a.avg` but _not_ `my_app.profile.a.b.avg`
+
+Once these 

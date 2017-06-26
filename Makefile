@@ -9,7 +9,7 @@ run:
 
 .PHONY: test
 test:
-	go test -v -cover
+	go test -v -cover -race
 
 # Runs a specific test suite
 # supports a regex as argument, as long as it only matches one suite
@@ -25,5 +25,9 @@ test_%:
 	fi) && COMMAND="go test -v $$SUITE $(TEST_SOURCES)" && echo $$COMMAND && eval $$COMMAND;
 
 .PHONY: build
-build:
+build: get
 	go build -o k9 $(SOURCES)
+
+.PHONY: get
+get:
+	go get -t -d -v ./...

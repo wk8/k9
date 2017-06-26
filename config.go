@@ -72,11 +72,7 @@ func (config *Config) loadPruningConfig(pruningConfigsPaths []string, initialLoa
 	newPruningConfig := NewPruningConfig()
 
 	for _, pruningConfigPath := range pruningConfigsPaths {
-		err := newPruningConfig.MergeWithFile(pruningConfigPath)
-
-		if err != nil {
-			logWarn("Unable to load pruning config from %v: %v", pruningConfigPath, err)
-		}
+		newPruningConfig.MergeWithFileOrGlob(pruningConfigPath)
 	}
 
 	config.PruningConfig.Reset(newPruningConfig)

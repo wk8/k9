@@ -8,7 +8,7 @@ import (
 
 func TestBaseConfig(t *testing.T) {
 	config := NewPruningConfig()
-	config.MergeWithFile("test_fixtures/pruning_configs/full.yml")
+	config.MergeWithFileOrGlob("test_fixtures/pruning_configs/full.yml")
 
 	// my_app.elasticsearch.count
 	pruningConfig := config.ConfigFor("my_app.elasticsearch.count")
@@ -125,7 +125,7 @@ func TestBaseConfig(t *testing.T) {
 
 func TestCaching(t *testing.T) {
 	config := NewPruningConfig()
-	config.MergeWithFile("test_fixtures/pruning_configs/full.yml")
+	config.MergeWithFileOrGlob("test_fixtures/pruning_configs/full.yml")
 
 	// the cache should be empty
 	expectedResolvedMetrics := map[string]*MetricPruningConfig{}
@@ -157,11 +157,11 @@ func TestCaching(t *testing.T) {
 
 func TestSeveralFiles(t *testing.T) {
 	configFromFull := NewPruningConfig()
-	configFromFull.MergeWithFile("test_fixtures/pruning_configs/full.yml")
+	configFromFull.MergeWithFileOrGlob("test_fixtures/pruning_configs/full.yml")
 
 	configFromPartials := NewPruningConfig()
-	for i := 0; i <= 4; i++ {
-		configFromPartials.MergeWithFile("test_fixtures/pruning_configs/" + strconv.Itoa(i) + ".yml")
+	for i := 1; i <= 4; i++ {
+		configFromPartials.MergeWithFileOrGlob("test_fixtures/pruning_configs/" + strconv.Itoa(i) + ".yml")
 	}
 
 	if !reflect.DeepEqual(configFromFull, configFromPartials) {
@@ -170,6 +170,22 @@ func TestSeveralFiles(t *testing.T) {
 		compareConfigTrees(t, configFromFull.root, configFromPartials.root, "")
 	}
 }
+
+func TestGlob(t *testing.T) {
+	configFromFull := NewPruningConfig()
+	configFromFull.MergeWithFileOrGlob("test_fixtures/pruning_configs/full.yml")
+
+	configFromGlob := NewPruningConfig()
+	configFromGlob.MergeWithFileOrGlob("test_fixtures/pruning_configs/*.yml")
+
+	if !reflect.DeepEqual(configFromFull, configFromGlob) {
+		t.Errorf("Unexpectedly different configs:\n%#v\nVS\n%#v", configFromFull, configFromGlob)
+		// the above doesn't yield usable output when failing...
+		compareConfigTrees(t, configFromFull.root, configFromGlob.root, "")
+	}
+}
+
+// Private helpers
 
 func compareConfigTrees(t *testing.T, expected, actual *configNode, currentPath string) {
 	if !reflect.DeepEqual(expected.value, actual.value) {

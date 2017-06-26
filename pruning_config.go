@@ -105,18 +105,15 @@ type pruningConfigFileContent struct {
 func (config *PruningConfig) MergeWithFileOrGlob(filenameOrGlob string) {
 	err := config.mergeWithFile(filenameOrGlob)
 
-	// TODO wkpo needed?
-	if err != nil {
-		if pathError, ok := err.(*os.PathError); ok && pathError.Err == syscall.ENOENT {
-			// maybe it's a glob?
-			matches, globErr := filepath.Glob(filenameOrGlob)
+	if pathError, ok := err.(*os.PathError); ok && pathError.Err == syscall.ENOENT {
+		// maybe it's a glob?
+		matches, globErr := filepath.Glob(filenameOrGlob)
 
-			if globErr == nil && len(matches) > 0 {
-				err = nil
-				for _, filename := range matches {
-					if newErr := config.mergeWithFile(filename); newErr != nil {
-						logWarn("Unable to load pruning config from %v: %v", filename, newErr)
-					}
+		if globErr == nil && len(matches) > 0 {
+			err = nil
+			for _, filename := range matches {
+				if newErr := config.mergeWithFile(filename); newErr != nil {
+					logWarn("Unable to load pruning config from %v: %v", filename, newErr)
 				}
 			}
 		}

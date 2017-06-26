@@ -27,6 +27,8 @@ log_level: DEBUG
 pruning_configs:
   - /opt/my_app/config/pruning_config.yml
   - /etc/k9/global_pruning_config.yml
+  # also supports glob patterns
+  - /etc/k9/pruning_configs/*.yml
 
 # what port to listen on locally, defaults to 8283
 listen_port: 8284

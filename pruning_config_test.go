@@ -176,7 +176,7 @@ func TestGlob(t *testing.T) {
 	configFromFull.MergeWithFileOrGlob("test_fixtures/pruning_configs/full.yml")
 
 	configFromGlob := NewPruningConfig()
-	configFromGlob.MergeWithFileOrGlob("test_fixtures/pruning_configs/*.yml")
+	configFromGlob.MergeWithFileOrGlob("test_fixtures/pruning_configs/[1-4].yml")
 
 	if !reflect.DeepEqual(configFromFull, configFromGlob) {
 		t.Errorf("Unexpectedly different configs:\n%#v\nVS\n%#v", configFromFull, configFromGlob)

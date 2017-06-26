@@ -2,7 +2,10 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
+	"syscall"
 
 	"gopkg.in/yaml.v2"
 )
@@ -99,7 +102,29 @@ type pruningConfigFileContent struct {
 	}
 }
 
-func (config *PruningConfig) MergeWithFile(filename string) error {
+func (config *PruningConfig) MergeWithFileOrGlob(filenameOrGlob string) {
+	err := config.mergeWithFile(filenameOrGlob)
+
+	if pathError, ok := err.(*os.PathError); ok && pathError.Err == syscall.ENOENT {
+		// maybe it's a glob?
+		matches, globErr := filepath.Glob(filenameOrGlob)
+
+		if globErr == nil && len(matches) > 0 {
+			err = nil
+			for _, filename := range matches {
+				if newErr := config.mergeWithFile(filename); newErr != nil {
+					logWarn("Unable to load pruning config from %v: %v", filename, newErr)
+				}
+			}
+		}
+	}
+
+	if err != nil {
+		logWarn("Unable to load pruning config from %v: %v", filenameOrGlob, err)
+	}
+}
+
+func (config *PruningConfig) mergeWithFile(filename string) error {
 	rawContent, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err

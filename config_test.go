@@ -11,8 +11,8 @@ func TestNewConfig(t *testing.T) {
 	var config *Config
 
 	expectedPruningConfig := NewPruningConfig()
-	expectedPruningConfig.MergeWithFile("test_fixtures/pruning_configs/1.yml")
-	expectedPruningConfig.MergeWithFile("test_fixtures/pruning_configs/2.yml")
+	expectedPruningConfig.MergeWithFileOrGlob("test_fixtures/pruning_configs/1.yml")
+	expectedPruningConfig.MergeWithFileOrGlob("test_fixtures/pruning_configs/2.yml")
 
 	t.Run("it successfully parses the given config file", func(t *testing.T) {
 		output := WithCatpuredLogging(func() {
@@ -107,8 +107,8 @@ func TestReload(t *testing.T) {
 	pruningConfig := config.PruningConfig
 
 	expectedPruningConfig1 := NewPruningConfig()
-	expectedPruningConfig1.MergeWithFile("test_fixtures/pruning_configs/1.yml")
-	expectedPruningConfig1.MergeWithFile("test_fixtures/pruning_configs/2.yml")
+	expectedPruningConfig1.MergeWithFileOrGlob("test_fixtures/pruning_configs/1.yml")
+	expectedPruningConfig1.MergeWithFileOrGlob("test_fixtures/pruning_configs/2.yml")
 
 	if !reflect.DeepEqual(expectedPruningConfig1, config.PruningConfig) {
 		t.Errorf("Unexpected pruning config: %#v", config.PruningConfig)
@@ -138,8 +138,8 @@ func TestReload(t *testing.T) {
 	config.Reload()
 
 	expectedPruningConfig2 := NewPruningConfig()
-	expectedPruningConfig2.MergeWithFile("test_fixtures/pruning_configs/3.yml")
-	expectedPruningConfig2.MergeWithFile("test_fixtures/pruning_configs/4.yml")
+	expectedPruningConfig2.MergeWithFileOrGlob("test_fixtures/pruning_configs/3.yml")
+	expectedPruningConfig2.MergeWithFileOrGlob("test_fixtures/pruning_configs/4.yml")
 
 	if !reflect.DeepEqual(expectedPruningConfig2, config.PruningConfig) {
 		t.Errorf("Unexpected pruning config: %#v", config.PruningConfig)

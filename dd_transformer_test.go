@@ -11,7 +11,7 @@ import (
 
 func TestDDTransformerProcess(t *testing.T) {
 	config := NewPruningConfig()
-	config.MergeWithFile("test_fixtures/pruning_configs/full.yml")
+	config.MergeWithFileOrGlob("test_fixtures/pruning_configs/full.yml")
 	transformer := &DDTransformer{config: config}
 
 	t.Run("it doesn't change requests other than POSTs to /api/v1/series/", func(t *testing.T) {

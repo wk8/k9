@@ -1,0 +1,3 @@
+pruning_configs:
+  - test_fixtures/pruning_configs/3.yml
+  - test_fixtures/pruning_configs/4.yml

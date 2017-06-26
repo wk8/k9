@@ -1,0 +1,12 @@
+tags:
+  remove:
+    - metrics:
+      - my_app.elasticsearch.count
+      tags:
+      - es_host
+
+  keep:
+    - metrics:
+      - my_app.hey.there
+      tags:
+      - hide_this

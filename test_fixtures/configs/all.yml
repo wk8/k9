@@ -1,0 +1,14 @@
+# should be one of DEBUG, INFO, WARN, ERROR or FATAL
+log_level: DEBUG
+
+# should be a list of paths to pruning configs
+pruning_configs:
+  - test_fixtures/pruning_configs/1.yml
+  - test_fixtures/pruning_configs/2.yml
+
+# what port to listen on locally, defaults to 8283
+listen_port: 8284
+
+# same as the DD agent's dd_url config parameter, similarly defaults to
+# https://app.datadoghq.com
+dd_url: https://my_private.datadoghq.com

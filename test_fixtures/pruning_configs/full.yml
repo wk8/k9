@@ -1,0 +1,44 @@
+# this config shoul be equivalent to the other 4
+
+metrics:
+  remove:
+    - my_app.**.max
+    - my_app.**.min
+    - my_app.profile.**.95percentile
+    - my_app.profile.**.median
+    - my_app.profile.*.avg
+    - top_level_metric
+
+  keep:
+    - my_app.profile.some.important.function.95percentile
+    - my_app.profile.some.important.function.median
+
+tags:
+  remove:
+    - metrics:
+      - my_app.**
+      tags:
+      - role
+      - instance-type
+    - metrics:
+      - my_app.elasticsearch.count
+      tags:
+      - es_host
+    - metrics:
+      - another_top_level_metric
+      tags:
+      - whatever
+    - metrics:
+      - '**'
+      tags:
+      - hide_this
+    - metrics:
+      - '*'
+      tags:
+      - not_for_top_level_metrics
+
+  keep:
+    - metrics:
+      - my_app.hey.there
+      tags:
+      - hide_this

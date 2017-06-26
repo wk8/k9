@@ -15,4 +15,25 @@ k9 aims to solve these issues by providing a very simple way to filter out the m
 
 ## How?
 
+k9 is a very simple HTTP proxy that should sit in between the agent and Datadog's API on every host you want to use it on. It reads a very simple configuration file to know which metrics/tags to remove:
+
+```yml
+# should be one of DEBUG, INFO, WARN, ERROR or FATAL - defaults to INFO if not present
+log_level: DEBUG
+
+# should be a list of paths to pruning configs (see more below)
+pruning_configs:
+  - /opt/my_app/config/pruning_config.yml
+  - /etc/k9/global_pruning_config.yml
+
+# what port to listen on locally, defaults to 8283
+listen_port: 8284
+
+# same as the DD agent's dd_url config parameter,
+# (https://github.com/DataDog/dd-agent/blob/5.14.1/datadog.conf.example#L4)
+# similarly defaults to https://app.datadoghq.com
+dd_url: https://my_private.datadoghq.com
+
+```
+
 

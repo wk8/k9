@@ -155,7 +155,7 @@ func TestProxy(t *testing.T) {
 
 	t.Run("it properly copies the query string",
 		func(t *testing.T) {
-			proxy, proxyBaseUrl := startNewTestProxy(&DummyTransformer{})
+			proxy, proxyBaseUrl := startNewTestProxy(&dummyTransformer{})
 
 			queryString := "hey=you&out=there"
 
@@ -180,7 +180,7 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer does nothing",
 		func(t *testing.T) {
-			proxy, proxyBaseUrl := startNewTestProxy(&DummyTransformer{})
+			proxy, proxyBaseUrl := startNewTestProxy(&dummyTransformer{})
 
 			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("hey"))
 			if err != nil {
@@ -207,7 +207,7 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer errors out",
 		func(t *testing.T) {
-			proxy, proxyBaseUrl := startNewTestProxy(&TestTransformer{})
+			proxy, proxyBaseUrl := startNewTestProxy(&testTransformer{})
 
 			lastRequest = nil
 
@@ -243,7 +243,7 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer sends back a shorter body",
 		func(t *testing.T) {
-			proxy, proxyBaseUrl := startNewTestProxy(&TestTransformer{})
+			proxy, proxyBaseUrl := startNewTestProxy(&testTransformer{})
 
 			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("don't ignore this, but delete me partially"))
 			if err != nil {
@@ -269,7 +269,7 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the transformer sends back a longer body",
 		func(t *testing.T) {
-			proxy, proxyBaseUrl := startNewTestProxy(&TestTransformer{})
+			proxy, proxyBaseUrl := startNewTestProxy(&testTransformer{})
 
 			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("if you could double me...?"))
 			if err != nil {
@@ -371,9 +371,9 @@ func getFreePort() int {
 }
 
 // a transformer that does nothing
-type DummyTransformer struct{}
+type dummyTransformer struct{}
 
-func (*DummyTransformer) Transform(*http.Request) error {
+func (*dummyTransformer) Transform(*http.Request) error {
 	return nil
 }
 
@@ -382,9 +382,9 @@ func (*DummyTransformer) Transform(*http.Request) error {
 //  * any occurence of "delete me" in the body is removed, any occurence of
 //    "double me" is doubled
 //  * if none of the above applies, does nothing
-type TestTransformer struct{}
+type testTransformer struct{}
 
-func (*TestTransformer) Transform(request *http.Request) error {
+func (*testTransformer) Transform(request *http.Request) error {
 	// read the body
 	bodyAsBytes, err := ioutil.ReadAll(request.Body)
 	defer request.Body.Close()

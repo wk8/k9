@@ -46,7 +46,7 @@ func TestNewConfig(t *testing.T) {
 			config = NewConfig("test_fixtures/configs/just_pruning_confs_1.yml", "")
 		})
 
-		if !CheckLogLines(t, output, []string{"WARN: Unable to load pruning config from /i/dont/exist: open /i/dont/exist: no such file or directory"}) {
+		if !CheckLogLines(t, output, "WARN: Unable to load pruning config from /i/dont/exist: open /i/dont/exist: no such file or directory") {
 			t.Errorf("Unexpected output: %v", output)
 		}
 
@@ -76,7 +76,7 @@ func TestNewConfigCrashesWhenFileDoesNotExist(t *testing.T) {
 		NewConfig("i/dont/exist", "")
 	})
 
-	if !CheckLogLines(t, output, []string{"FATAL: Unable to read the config at i/dont/exist: open i/dont/exist: no such file or directory"}) {
+	if !CheckLogLines(t, output, "FATAL: Unable to read the config at i/dont/exist: open i/dont/exist: no such file or directory") {
 		t.Errorf("Unexpected output: %v", output)
 	}
 }

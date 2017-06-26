@@ -13,11 +13,11 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !CheckLogLines(t, output, []string{
+		if !CheckLogLines(t, output,
 			"DEBUG: coucou toi - 28",
 			"INFO: hey you",
 			"WARN: getting lonely",
-			"ERROR: getting old"}) {
+			"ERROR: getting old") {
 			t.Errorf("Unexpected output: %v", output)
 		}
 	})
@@ -30,10 +30,10 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !CheckLogLines(t, output, []string{
+		if !CheckLogLines(t, output,
 			"INFO: hey you",
 			"WARN: getting lonely",
-			"ERROR: getting old"}) {
+			"ERROR: getting old") {
 			t.Errorf("Unexpected output: %v", output)
 		}
 	})
@@ -46,9 +46,9 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !CheckLogLines(t, output, []string{
+		if !CheckLogLines(t, output,
 			"WARN: getting lonely",
-			"ERROR: getting old"}) {
+			"ERROR: getting old") {
 			t.Errorf("Unexpected output: %v", output)
 		}
 	})
@@ -61,7 +61,7 @@ func TestLogLevels(t *testing.T) {
 			logError("getting old")
 		})
 
-		if !CheckLogLines(t, output, []string{"ERROR: getting old"}) {
+		if !CheckLogLines(t, output, "ERROR: getting old") {
 			t.Errorf("Unexpected output: %v", output)
 		}
 	})
@@ -72,7 +72,7 @@ func TestLogFatal(t *testing.T) {
 		logFatal("hey teacher, leave those kids alone")
 	})
 
-	if !CheckLogLines(t, output, []string{"FATAL: hey teacher, leave those kids alone"}) {
+	if !CheckLogLines(t, output, "FATAL: hey teacher, leave those kids alone") {
 		t.Errorf("Unexpected output: %v", output)
 	}
 }
@@ -86,7 +86,7 @@ func TestLogDebugWith(t *testing.T) {
 				})
 			})
 
-			if !CheckLogLines(t, output, []string{"DEBUG: coucou toi - 28"}) {
+			if !CheckLogLines(t, output, "DEBUG: coucou toi - 28") {
 				t.Errorf("Unexpected output: %v", output)
 			}
 		})
@@ -155,7 +155,7 @@ func TestSetLogLevelFromString(t *testing.T) {
 				_, err = setLogLevelFromString("hey")
 			})
 
-			if !CheckLogLines(t, output, []string{"WARN: Unknown log level, ignoring: hey"}) {
+			if !CheckLogLines(t, output, "WARN: Unknown log level, ignoring: hey") {
 				t.Errorf("Unexpected output: %v", output)
 			}
 			if err == nil {

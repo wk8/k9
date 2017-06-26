@@ -43,6 +43,7 @@ type configFileContent struct {
 }
 
 func (config *Config) Reload() {
+	logInfo("Reloading configuration...")
 	config.load(false)
 }
 

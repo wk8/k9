@@ -20,7 +20,7 @@ func WithCatpuredLogging(fun func()) string {
 
 var logLineRegex = regexp.MustCompile("^[0-9]{4}(?:/[0-9]{2}){2} [0-9]{2}(?::[0-9]{2}){2} (?P<Rest>.*)$")
 
-func CheckLogLines(t *testing.T, output string, expectedLines []string) bool {
+func CheckLogLines(t *testing.T, output string, expectedLines ...string) bool {
 	output = strings.TrimSpace(output)
 	actualLines := strings.Split(output, "\n")
 

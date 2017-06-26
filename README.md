@@ -15,6 +15,8 @@ k9 aims to solve these issues by providing a very simple way to filter out the m
 
 ## How?
 
+### Configuration
+
 k9 is a very simple HTTP proxy that should sit in between the agent and Datadog's API on every host you want to use it on. It reads a very simple YML configuration file to know which metrics/tags to remove (all the fields are optional):
 
 ```yml
@@ -81,6 +83,18 @@ tags:
 
 ```
 
-where double wildcards `**` will match one or more "sub-keys", e.g. `my_app.**.max` in the example above will match all of `my_app.a.max`, `my_app.a.b.max`, `my_app.a.b.c.max`, and so on; while single wildcards only match one "sub-key", e.g. `my_app.profile.*.avg` will match `my_app.profile.a.avg` but _not_ `my_app.profile.a.b.avg`
+where double wildcards `**` will match one or more "sub-keys", e.g. `my_app.**.max` in the example above will match all of `my_app.a.max`, `my_app.a.b.max`, `my_app.a.b.c.max`, and so on; while single wildcards only match one "sub-key", e.g. `my_app.profile.*.avg` will match `my_app.profile.a.avg` but _not_ `my_app.profile.a.b.avg`.
 
-Once these 
+### Running k9
+
+Once the configuration files have been written, k9 needs simply be kept running as a service, and sent a HUP signal whenever it should re-parse the pruning configurations.
+
+You'll also need to point your Datadog agent at your k9 instance, by adding for instance:
+```yml
+dd_url: http://localhost:8283
+```
+to your agent's configuration (see https://github.com/DataDog/dd-agent/blob/5.14.1/datadog.conf.example#L4)
+
+### Using Chef?
+
+If you already use [Chef](https://www.chef.io/) to manage and deploy Datadog to your hosts (presumably using [the official Datadog cookbook](https://github.com/DataDog/chef-datadog)), then deploying and using k9 is made very easy by the [k9 cookbook](https://github.com/wk8/cookbook-k9).

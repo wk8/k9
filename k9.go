@@ -20,7 +20,7 @@ func main() {
 	config := NewConfig(*configPath, *logLevel)
 
 	// start the proxy
-	proxy := NewProxy(config.DdUrl, &DDTransformer{})
+	proxy := NewProxy(config.DdUrl, &DDTransformer{config: config.PruningConfig})
 	proxy.Start(config.ListenPort)
 
 	// then listen for signals

@@ -62,3 +62,8 @@ func AssertCrashes(t *testing.T, testCaseName string, testCase func()) string {
 	}
 	return buffer.String()
 }
+
+func IsCircle() bool {
+	_, isCircle := os.LookupEnv("CIRCLECI")
+	return isCircle
+}

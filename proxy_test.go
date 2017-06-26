@@ -64,6 +64,7 @@ func TestProxy(t *testing.T) {
 
 		proxy := NewProxy(proxyTarget, transformer, optionalTimeouts...)
 		proxy.Start(proxyPort)
+		sleepIfCircle()
 
 		return proxy, proxyBaseUrl
 	}
@@ -298,6 +299,7 @@ func TestProxy(t *testing.T) {
 			proxyPort := getFreePort()
 			proxy := NewProxy("http://10.255.255.1", nil, 1*time.Millisecond)
 			proxy.Start(proxyPort)
+			sleepIfCircle()
 
 			response, err := http.Get("http://localhost:" + strconv.Itoa(proxyPort))
 			if err != nil {
@@ -402,4 +404,10 @@ func (*testTransformer) Transform(request *http.Request) error {
 
 	request.Body = ioutil.NopCloser(strings.NewReader(body))
 	return nil
+}
+
+func sleepIfCircle() {
+	if IsCircle() {
+		time.Sleep(250 * time.Millisecond)
+	}
 }

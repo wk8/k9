@@ -3,9 +3,12 @@ SHELL := /bin/bash
 SOURCES = $(filter-out %_test.go test_utils.go, $(wildcard *.go))
 TEST_SOURCES=$(SOURCES) test_utils.go
 
+VERSION = $(shell git rev-parse HEAD)
+LDFLAGS = -ldflags "-X main.VERSION=$(VERSION)"
+
 .PHONY: run
 run:
-	go run $(SOURCES)
+	go run $(LDFLAGS) $(SOURCES)
 
 .PHONY: test
 test:
@@ -26,7 +29,7 @@ test_%:
 
 .PHONY: build
 build: get
-	go build -o k9 $(SOURCES)
+	go build $(LDFLAGS) -o k9 $(SOURCES)
 
 .PHONY: get
 get:

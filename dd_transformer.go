@@ -97,32 +97,34 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 			continue
 		}
 
-		rawTags, present := metric["tags"]
-		if present {
-			tags, ok := rawTags.([]interface{})
-			if !ok {
-				logWarn("Unexpected metric in a series JSON (tags): %#v", rawMetric)
-				continue
-			}
-
-			newTags := []string{}
-			for _, rawTag := range tags {
-				tag, ok := rawTag.(string)
-				if !ok || tag == "" {
-					logWarn("Unexpected tag in a series JSON: %#v", rawMetric)
+		// might seem weird, but the agent does sometimes send a `null` value for tags
+		if rawTags, present := metric["tags"]; present && rawTags != nil {
+			if rawTags != nil {
+				tags, ok := rawTags.([]interface{})
+				if !ok {
+					logWarn("Unexpected metric in a series JSON (tags): %#v", rawMetric)
 					continue
 				}
 
-				splitTag := strings.SplitN(tag, ":", 2)
-				if !pruningConfig.RemoveTags[splitTag[0]] {
-					newTags = append(newTags, tag)
-				}
-			}
+				newTags := []string{}
+				for _, rawTag := range tags {
+					tag, ok := rawTag.(string)
+					if !ok || tag == "" {
+						logWarn("Unexpected tag in a series JSON: %#v", rawMetric)
+						continue
+					}
 
-			if len(newTags) == 0 {
-				delete(metric, "tags")
-			} else {
-				metric["tags"] = newTags
+					splitTag := strings.SplitN(tag, ":", 2)
+					if !pruningConfig.RemoveTags[splitTag[0]] {
+						newTags = append(newTags, tag)
+					}
+				}
+
+				if len(newTags) == 0 {
+					delete(metric, "tags")
+				} else {
+					metric["tags"] = newTags
+				}
 			}
 		}
 

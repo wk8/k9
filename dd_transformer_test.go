@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -113,6 +115,43 @@ func TestDDTransformerProcess(t *testing.T) {
 		if err == nil {
 			t.Fatal("Didn't get an error")
 		}
+	})
+
+	t.Run("it doesn't complain about `null` tags, and passes them as is", func(t *testing.T) {
+		output := WithCatpuredLogging(func() {
+			rawContent, err := ioutil.ReadFile("test_fixtures/series_requests/null_tags.json")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", bytes.NewReader(rawContent))
+			if err != nil {
+				t.Fatal(nil)
+			}
+			err = transformer.Transform(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			body := readBody(t, request)
+
+			var initialJson map[string]interface{}
+			err = json.Unmarshal(rawContent, &initialJson)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var transformedJson map[string]interface{}
+			err = json.Unmarshal([]byte(body), &transformedJson)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(initialJson, transformedJson) {
+				t.Errorf("Unexpected body: %v", body)
+			}
+		})
+
+		logInfo("wkpo bordel output: %v", output)
 	})
 }
 

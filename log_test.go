@@ -6,7 +6,7 @@ import (
 
 func TestLogLevels(t *testing.T) {
 	t.Run("debug", func(t *testing.T) {
-		output := withLogLevelAndCapturedLogging(DEBUG, func() {
+		output := WithLogLevelAndCapturedLogging(DEBUG, func() {
 			logDebug("%v %v - %v", "coucou", "toi", 28)
 			logInfo("hey you")
 			logWarn("getting lonely")
@@ -23,7 +23,7 @@ func TestLogLevels(t *testing.T) {
 	})
 
 	t.Run("info", func(t *testing.T) {
-		output := withLogLevelAndCapturedLogging(INFO, func() {
+		output := WithLogLevelAndCapturedLogging(INFO, func() {
 			logDebug("%v %v - %v", "coucou", "toi", 28)
 			logInfo("hey you")
 			logWarn("getting lonely")
@@ -39,7 +39,7 @@ func TestLogLevels(t *testing.T) {
 	})
 
 	t.Run("warn", func(t *testing.T) {
-		output := withLogLevelAndCapturedLogging(WARN, func() {
+		output := WithLogLevelAndCapturedLogging(WARN, func() {
 			logDebug("%v %v - %v", "coucou", "toi", 28)
 			logInfo("hey you")
 			logWarn("getting lonely")
@@ -54,7 +54,7 @@ func TestLogLevels(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
-		output := withLogLevelAndCapturedLogging(ERROR, func() {
+		output := WithLogLevelAndCapturedLogging(ERROR, func() {
 			logDebug("%v %v - %v", "coucou", "toi", 28)
 			logInfo("hey you")
 			logWarn("getting lonely")
@@ -80,7 +80,7 @@ func TestLogFatal(t *testing.T) {
 func TestLogDebugWith(t *testing.T) {
 	t.Run("when the log level is set to debug, it uses the callback to log",
 		func(t *testing.T) {
-			output := withLogLevelAndCapturedLogging(DEBUG, func() {
+			output := WithLogLevelAndCapturedLogging(DEBUG, func() {
 				logDebugWith("%v %v - %v", func() []interface{} {
 					return []interface{}{"coucou", "toi", 28}
 				})
@@ -93,7 +93,7 @@ func TestLogDebugWith(t *testing.T) {
 
 	t.Run("when the log level is not set to debug, it doesn't run the callback",
 		func(t *testing.T) {
-			output := withLogLevelAndCapturedLogging(INFO, func() {
+			output := WithLogLevelAndCapturedLogging(INFO, func() {
 				logDebugWith("%v %v - %v", func() []interface{} {
 					t.Fatalf("The callback is being called")
 					return []interface{}{}
@@ -164,13 +164,4 @@ func TestSetLogLevelFromString(t *testing.T) {
 		})
 
 	setLogLevel(previousLogLevel)
-}
-
-// Private helpers
-
-func withLogLevelAndCapturedLogging(logLevel LogLevel, fun func()) string {
-	previousLogLevel := setLogLevel(logLevel)
-	output := WithCatpuredLogging(fun)
-	setLogLevel(previousLogLevel)
-	return output
 }

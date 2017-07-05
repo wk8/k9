@@ -91,7 +91,7 @@ func TestDDTransformerProcess(t *testing.T) {
 		}
 		decodedBody, err := ioutil.ReadAll(reader)
 		if err != nil {
-			panic(err)
+			t.Fatal(err)
 		}
 
 		expectedDecodedBody, err := ioutil.ReadFile("test_fixtures/series_requests/expected_result.json")
@@ -101,6 +101,45 @@ func TestDDTransformerProcess(t *testing.T) {
 
 		if b := string(decodedBody); string(expectedDecodedBody) != b {
 			t.Errorf("Unexpected body: %v", b)
+		}
+	})
+
+	t.Run("if debug mode is on, it logs the decoded request", func(t *testing.T) {
+		rawContent, err := ioutil.ReadFile("test_fixtures/series_requests/encoded")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", bytes.NewReader(rawContent))
+		request.Header["Content-Encoding"] = []string{"deflate"}
+
+		output := WithLogLevelAndCapturedLogging(DEBUG, func() {
+			err = transformer.Transform(request)
+			if err != nil {
+				t.Fatal(nil)
+			}
+		})
+
+		// check the transformation worked just the same
+		reader, err := zlib.NewReader(request.Body)
+		if err != nil {
+			t.Fatal(nil)
+		}
+		decodedBody, err := ioutil.ReadAll(reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedDecodedBody, err := ioutil.ReadFile("test_fixtures/series_requests/expected_result.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if b := string(decodedBody); string(expectedDecodedBody) != b {
+			t.Errorf("Unexpected body: %v", b)
+		}
+
+		// and the output should be the decoded request
+		if !strings.Contains(output, "my_app.workers.queue_size") {
+			t.Errorf("Unexpected logging output: %#v", output)
 		}
 	})
 

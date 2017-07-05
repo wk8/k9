@@ -18,6 +18,13 @@ func WithCatpuredLogging(fun func()) string {
 	return buffer.String()
 }
 
+func WithLogLevelAndCapturedLogging(logLevel LogLevel, fun func()) string {
+	previousLogLevel := setLogLevel(logLevel)
+	output := WithCatpuredLogging(fun)
+	setLogLevel(previousLogLevel)
+	return output
+}
+
 var logLineRegex = regexp.MustCompile("^[0-9]{4}(?:/[0-9]{2}){2} [0-9]{2}(?::[0-9]{2}){2} (?P<Rest>.*)$")
 
 func CheckLogLines(t *testing.T, output string, expectedLines ...string) bool {

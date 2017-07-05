@@ -15,6 +15,10 @@ type DDTransformer struct {
 }
 
 func (transformer *DDTransformer) Transform(request *http.Request) error {
+	if err := logDebugTransformerRequest(request); err != nil {
+		return err
+	}
+
 	if request.Method == "POST" && request.URL.Path == "/api/v1/series/" {
 		return transformer.transformSeriesRequest(request)
 	}
@@ -142,4 +146,41 @@ func encodeBody(body []byte) []byte {
 	writer.Close()
 
 	return buffer.Bytes()
+}
+
+func logDebugTransformerRequest(request *http.Request) error {
+	var err error = nil
+
+	logDebugWith("Received a %v request for %v with body %v", func() []interface{} {
+		// hardly super efficient, but then that's not what debug logs are for either
+		var reader io.ReadCloser
+		var encoded bool
+		var bodyAsString string = "<errored when reading body>"
+		var bodyAsBytes []byte
+
+		for {
+			reader, encoded, err = maybeDecodeBody(request)
+			if err != nil {
+				break
+			}
+
+			bodyAsBytes, err = ioutil.ReadAll(reader)
+			defer reader.Close()
+			if err != nil {
+				break
+			}
+			bodyAsString = string(bodyAsBytes)
+
+			if encoded {
+				bodyAsBytes = encodeBody(bodyAsBytes)
+			}
+			request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyAsBytes))
+
+			break
+		}
+
+		return []interface{}{request.Method, request.URL.Path, bodyAsString}
+	})
+
+	return err
 }

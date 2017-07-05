@@ -143,6 +143,10 @@ func (proxy *HttpProxy) ServeHTTP(responseWriter http.ResponseWriter, request *h
 			return []interface{}{request.Method, request.URL.Path, clientResponse.StatusCode, clientResponse.Header, respBody}
 		})
 
+	if clientResponse.StatusCode > 299 {
+		logWarn("%v request for %v received response status %v", request.Method, request.URL.Path, clientResponse.StatusCode)
+	}
+
 	// copy the response headers
 	responseHeaders := responseWriter.Header()
 	for key, value := range clientResponse.Header {

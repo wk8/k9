@@ -61,8 +61,7 @@ func maybeDecodeBody(request *http.Request) (reader io.ReadCloser, encoded bool,
 	reader = request.Body
 
 	// decode if needed
-	contentEncoding := request.Header["Content-Encoding"]
-	if len(contentEncoding) > 0 && contentEncoding[0] == "deflate" {
+	if isEncodedRequest(request) {
 		encoded = true
 		reader, err = zlib.NewReader(reader)
 	}
@@ -153,29 +152,33 @@ func logDebugTransformerRequest(request *http.Request) error {
 
 	logDebugWith("Received a %v request for %v with body %v", func() []interface{} {
 		// hardly super efficient, but then that's not what debug logs are for either
-		var reader io.ReadCloser
-		var encoded bool
-		var bodyAsString string = "<errored when reading body>"
 		var bodyAsBytes []byte
+		var bodyAsString string = "<errored when reading body>"
 
 		for {
-			reader, encoded, err = maybeDecodeBody(request)
+			bodyAsBytes, err = ioutil.ReadAll(request.Body)
+			defer request.Body.Close()
 			if err != nil {
 				break
-			}
-
-			bodyAsBytes, err = ioutil.ReadAll(reader)
-			defer reader.Close()
-			if err != nil {
-				break
-			}
-			bodyAsString = string(bodyAsBytes)
-
-			if encoded {
-				bodyAsBytes = encodeBody(bodyAsBytes)
 			}
 			request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyAsBytes))
 
+			decodedBodyAsBytes := bodyAsBytes
+			if isEncodedRequest(request) {
+				var reader io.ReadCloser
+				reader, err = zlib.NewReader(bytes.NewReader(bodyAsBytes))
+				if err != nil {
+					break
+				}
+
+				decodedBodyAsBytes, err = ioutil.ReadAll(reader)
+				defer reader.Close()
+				if err != nil {
+					break
+				}
+			}
+
+			bodyAsString = string(decodedBodyAsBytes)
 			break
 		}
 
@@ -183,4 +186,9 @@ func logDebugTransformerRequest(request *http.Request) error {
 	})
 
 	return err
+}
+
+func isEncodedRequest(request *http.Request) bool {
+	contentEncoding := request.Header["Content-Encoding"]
+	return len(contentEncoding) > 0 && contentEncoding[0] == "deflate"
 }

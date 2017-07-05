@@ -54,7 +54,7 @@ func TestDDTransformerProcess(t *testing.T) {
 
 		request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", bytes.NewReader(rawContent))
 		if err != nil {
-			t.Fatal(nil)
+			t.Fatal(err)
 		}
 		err = transformer.Transform(request)
 		if err != nil {
@@ -81,13 +81,13 @@ func TestDDTransformerProcess(t *testing.T) {
 		request.Header["Content-Encoding"] = []string{"deflate"}
 		err = transformer.Transform(request)
 		if err != nil {
-			t.Fatal(nil)
+			t.Fatal(err)
 		}
 
 		// decode the body
 		reader, err := zlib.NewReader(request.Body)
 		if err != nil {
-			t.Fatal(nil)
+			t.Fatal(err)
 		}
 		decodedBody, err := ioutil.ReadAll(reader)
 		if err != nil {
@@ -116,14 +116,14 @@ func TestDDTransformerProcess(t *testing.T) {
 		output := WithLogLevelAndCapturedLogging(DEBUG, func() {
 			err = transformer.Transform(request)
 			if err != nil {
-				t.Fatal(nil)
+				t.Fatal(err)
 			}
 		})
 
 		// check the transformation worked just the same
 		reader, err := zlib.NewReader(request.Body)
 		if err != nil {
-			t.Fatal(nil)
+			t.Fatal(err)
 		}
 		decodedBody, err := ioutil.ReadAll(reader)
 		if err != nil {
@@ -165,7 +165,7 @@ func TestDDTransformerProcess(t *testing.T) {
 
 			request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", bytes.NewReader(rawContent))
 			if err != nil {
-				t.Fatal(nil)
+				t.Fatal(err)
 			}
 			err = transformer.Transform(request)
 			if err != nil {

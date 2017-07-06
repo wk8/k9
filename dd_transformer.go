@@ -11,7 +11,13 @@ import (
 )
 
 type DDTransformer struct {
-	config   *PruningConfig
+	config *PruningConfig
+	// TODO wkpo actually use that shit:
+	// 1. add a `keepHostTags` field to remove tags sections, defaulting to true, can be overriden to false, and then overriden back to true
+	// 2. in MetricPruningConfig structs, add a `addHostTags` bool, which is there when 'host' is in the list of tags to remove AND keepHostTagsis true for that metric
+	// 3. here, when addHostTags is true, then need to fetch them, make them go through the list of tags to remove anyhow
+	// 4. update unit tests
+	// 5. update the README
 	hostTags *HostTags
 }
 

@@ -190,8 +190,9 @@ func TestDDTransformerProcess(t *testing.T) {
 			}
 		})
 
-		// TODO wkpo
-		logInfo("wkpo bordel output: %v", output)
+		if output != "" {
+			t.Errorf("Unexpected output: %v", output)
+		}
 	})
 }
 

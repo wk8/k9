@@ -154,7 +154,7 @@ func TestHostTags(t *testing.T) {
 		}
 
 		for _, tags := range allTags {
-			// we should have alternating phases with 0 and 1 tags, and at least 4 phases
+			// we should have alternating phases with 0 and 1 tags, and at a couple of phases
 			nbPhases := 0
 			current := expectedTags1
 			next := expectedTags0
@@ -171,8 +171,8 @@ func TestHostTags(t *testing.T) {
 				t.Errorf("Unexpected tags: %v neither %v nor %v", tag, current, next)
 			}
 
-			if nbPhases < 4 {
-				t.Errorf("Too little phases: %v", nbPhases)
+			if nbPhases < 2 {
+				t.Errorf("Too few phases: %v", nbPhases)
 			}
 		}
 

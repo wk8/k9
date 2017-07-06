@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 )
 
 type hostTagsTestServer struct{}
@@ -16,8 +17,10 @@ var lastRequest *http.Request
 var requestCount int
 var nextRequestBody *string
 
+var interval = 50 * time.Millisecond
+
 func (server *hostTagsTestServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	// we simply alternate between 2 JSONs, except if nextRequestBody if not nil
+	// we simply alternate between 2 JSONs, except if nextRequestBody is not nil
 	var jsonName string
 	if nextRequestBody != nil {
 		jsonName = *nextRequestBody
@@ -40,6 +43,8 @@ func (server *hostTagsTestServer) ServeHTTP(responseWriter http.ResponseWriter, 
 }
 
 func resetTagsTestServer() {
+	// wait for the previous test to be completely done
+	time.Sleep(interval)
 	lastRequest = nil
 	requestCount = 0
 	nextRequestBody = nil
@@ -59,7 +64,7 @@ var expectedTags0 = map[string][]string{
 }
 
 var expectedTags1 = map[string][]string{
-	"foo":  []string{"bar"},
+	"foo":  []string{"foo:bar"},
 	"name": []string{"name:my-aws-host"},
 }
 
@@ -104,7 +109,77 @@ func TestHostTags(t *testing.T) {
 			t.Errorf("Unexpected URL query string: %v", lastRequest.URL.RawQuery)
 		}
 
+		// cleanup
 		hostTags.Stop()
+	})
+
+	t.Run("it periodically updates the tags, and is thread safe", func(t *testing.T) {
+		resetTagsTestServer()
+		hostTags := NewHostsTags(url, apiKey, applicationKey, &interval)
+
+		// spin up a number of routines, each trying to get tags as fast as they can
+		// for 5 intervals
+		nbRoutines := 3
+		tagsChannel := make(chan []map[string][]string, nbRoutines)
+		stopAfter := time.Now().Add(5 * interval)
+		for i := 0; i < nbRoutines; i++ {
+			go func() {
+				localTags := make([]map[string][]string, 0)
+				for time.Now().Before(stopAfter) {
+					localTags = append(localTags, hostTags.GetTags())
+				}
+				tagsChannel <- localTags
+			}()
+		}
+
+		// then wait for each routine to report, and check that each routine saw the
+		// expected sequence of tags
+		timeout := time.NewTimer(10 * interval)
+		allTags := make([][]map[string][]string, 0)
+	waiting_loop:
+		for i := 0; i < nbRoutines; i++ {
+			select {
+			case tags := <-tagsChannel:
+				allTags = append(allTags, tags)
+			case <-timeout.C:
+				t.Errorf("Waited for too long, only received tags from %v routine(s)", i)
+				break waiting_loop
+			}
+		}
+
+		for _, tags := range allTags {
+			// we should have alternating phases with 0 and 1 tags, and at least 4 phases
+			nbPhases := 0
+			current := expectedTags1
+			next := expectedTags0
+
+			for _, tag := range tags {
+				if reflect.DeepEqual(tag, current) {
+					continue
+				}
+				if reflect.DeepEqual(tag, next) {
+					nbPhases++
+					current, next = next, current
+					continue
+				}
+				t.Errorf("Unexpected tags: %v neither %v nor %v", tag, current, next)
+			}
+
+			if nbPhases < 4 {
+				t.Errorf("Too little phases: %v", nbPhases)
+			}
+		}
+
+		// cleanup
+		hostTags.Stop()
+	})
+
+	t.Run("it times out after a few seconds, but tries to update again later", func(t *testing.T) {
+
+	})
+
+	t.Run("after Stop() is called, it stops updating tags", func(t *testing.T) {
+
 	})
 
 	// cleanup

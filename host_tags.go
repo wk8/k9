@@ -35,6 +35,10 @@ func NewHostsTags(ddUrl, apiKey, applicationKey string, cachingInterval *time.Du
 		applicationKey: applicationKey,
 	}
 	hostTags.updateTags()
+	if hostTags.tags == nil {
+		// errored out when initializing
+		hostTags.tags = make(map[string][]string)
+	}
 	go hostTags.start(interval)
 
 	return hostTags
@@ -47,7 +51,9 @@ func (hostTags *HostTags) GetTags() map[string][]string {
 }
 
 func (hostTags *HostTags) Stop() {
-	hostTags.timer.Stop()
+	if hostTags.timer != nil {
+		hostTags.timer.Stop()
+	}
 }
 
 // Private helpers
@@ -67,8 +73,8 @@ func (hostTags *HostTags) updateTags() {
 	}
 
 	hostTags.mutex.Lock()
-	defer hostTags.mutex.Unlock()
 	hostTags.tags = newTags
+	hostTags.mutex.Unlock()
 }
 
 // see https://docs.datadoghq.com/api/?lang=console#tags-get-host
@@ -83,7 +89,7 @@ func (hostTags *HostTags) fetchNewTags() (map[string][]string, error) {
 		hostTags.ddUrl, hostname, hostTags.apiKey, hostTags.applicationKey)
 	// TODO wkpo timeout!!
 	response, err := http.Get(url)
-	if response.StatusCode > 299 {
+	if err == nil && response.StatusCode > 299 {
 		err = errors.New("status code: " + strconv.Itoa(response.StatusCode))
 	}
 	if err != nil {

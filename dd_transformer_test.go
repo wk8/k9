@@ -190,6 +190,7 @@ func TestDDTransformerProcess(t *testing.T) {
 			}
 		})
 
+		// TODO wkpo
 		logInfo("wkpo bordel output: %v", output)
 	})
 }

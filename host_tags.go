@@ -19,9 +19,12 @@ type HostTags struct {
 	mutex                         sync.RWMutex
 	timer                         *time.Timer
 	ddUrl, apiKey, applicationKey string
+	client                        *http.Client
+	timerStopped                  bool
 }
 
 const DEFAULT_CACHING_INTERVAL = 1 * time.Hour
+const HTTP_TIMEOUT = 20 * time.Second
 
 func NewHostsTags(ddUrl, apiKey, applicationKey string, cachingInterval *time.Duration) *HostTags {
 	interval := DEFAULT_CACHING_INTERVAL
@@ -29,17 +32,26 @@ func NewHostsTags(ddUrl, apiKey, applicationKey string, cachingInterval *time.Du
 		interval = *cachingInterval
 	}
 
+	timeout := HTTP_TIMEOUT
+	if interval < timeout {
+		timeout = interval
+	}
+	client := &http.Client{Timeout: timeout}
+
 	hostTags := &HostTags{
 		ddUrl:          ddUrl,
 		apiKey:         apiKey,
 		applicationKey: applicationKey,
+		client:         client,
 	}
 	hostTags.updateTags()
 	if hostTags.tags == nil {
 		// errored out when initializing
 		hostTags.tags = make(map[string][]string)
 	}
-	go hostTags.start(interval)
+	started := make(chan bool)
+	go hostTags.start(interval, started)
+	<-started
 
 	return hostTags
 }
@@ -51,18 +63,21 @@ func (hostTags *HostTags) GetTags() map[string][]string {
 }
 
 func (hostTags *HostTags) Stop() {
-	if hostTags.timer != nil {
-		hostTags.timer.Stop()
-	}
+	hostTags.timer.Stop()
+	hostTags.timerStopped = true
 }
 
 // Private helpers
 
-func (hostTags *HostTags) start(interval time.Duration) {
+func (hostTags *HostTags) start(interval time.Duration, started chan bool) {
 	hostTags.timer = time.AfterFunc(interval, func() {
+		if hostTags.timerStopped {
+			return
+		}
 		hostTags.updateTags()
 		hostTags.timer.Reset(interval)
 	})
+	started <- true
 }
 
 func (hostTags *HostTags) updateTags() {
@@ -87,8 +102,11 @@ func (hostTags *HostTags) fetchNewTags() (map[string][]string, error) {
 
 	url := fmt.Sprintf("%v/api/v1/tags/hosts/%v?api_key=%v&application_key=%v",
 		hostTags.ddUrl, hostname, hostTags.apiKey, hostTags.applicationKey)
-	// TODO wkpo timeout!!
-	response, err := http.Get(url)
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logError("Unable to make a request to %v", url)
+	}
+	response, err := hostTags.client.Do(request)
 	if err == nil && response.StatusCode > 299 {
 		err = errors.New("status code: " + strconv.Itoa(response.StatusCode))
 	}

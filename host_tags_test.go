@@ -16,6 +16,7 @@ type hostTagsTestServer struct{}
 var hostTagsTestLastRequest *http.Request
 var requestCount int
 var nextRequestBody *string
+var nextRequestSleep *time.Duration
 
 var interval = 50 * time.Millisecond
 
@@ -33,6 +34,10 @@ func (server *hostTagsTestServer) ServeHTTP(responseWriter http.ResponseWriter, 
 		panic(err)
 	}
 
+	if nextRequestSleep != nil {
+		time.Sleep(*nextRequestSleep)
+	}
+
 	_, err = responseWriter.Write(responseBody)
 	if err != nil {
 		panic(err)
@@ -48,6 +53,7 @@ func resetTagsTestServer() {
 	hostTagsTestLastRequest = nil
 	requestCount = 0
 	nextRequestBody = nil
+	nextRequestSleep = nil
 }
 
 var expectedTags0 = map[string][]string{
@@ -174,12 +180,72 @@ func TestHostTags(t *testing.T) {
 		hostTags.Stop()
 	})
 
-	t.Run("it times out after a few seconds, but tries to update again later", func(t *testing.T) {
+	t.Run("it times out after a little while if the DD API isn't responsive, but tries to update again later", func(t *testing.T) {
+		resetTagsTestServer()
+		twoIntervals := 2 * interval
+		nextRequestSleep = &twoIntervals
+		hostTags := NewHostsTags(url, apiKey, applicationKey, &interval)
 
+		tags := hostTags.GetTags()
+		if !reflect.DeepEqual(make(map[string][]string), tags) {
+			t.Errorf("Unexpected tags: %#v", tags)
+		}
+		nextRequestSleep = nil
+
+		// next time should be successful though
+		time.Sleep(twoIntervals)
+		tags = hostTags.GetTags()
+		if !reflect.DeepEqual(expectedTags1, tags) {
+			t.Errorf("Unexpected tags: %#v", tags)
+		}
+
+		// cleanup
+		hostTags.Stop()
+	})
+
+	t.Run("if the call fails, but it already has tags, just keeps the current tags", func(t *testing.T) {
+		resetTagsTestServer()
+		hostTags := NewHostsTags(url, apiKey, applicationKey, &interval)
+
+		twoIntervals := 2 * interval
+		nextRequestSleep = &twoIntervals
+
+		tags := hostTags.GetTags()
+		if !reflect.DeepEqual(expectedTags0, tags) {
+			t.Errorf("Unexpected tags: %#v", tags)
+		}
+
+		// cleanup
+		hostTags.Stop()
 	})
 
 	t.Run("after Stop() is called, it stops updating tags", func(t *testing.T) {
+		resetTagsTestServer()
+		hostTags := NewHostsTags(url, apiKey, applicationKey, &interval)
 
+		hostTags.Stop()
+
+		time.Sleep(5 * interval)
+
+		// no additional request should have been made
+		if requestCount != 1 {
+			t.Errorf("Unexpected number of requests: %v", requestCount)
+		}
+	})
+
+	t.Run("it doesn't crash if the response isn't what's expected", func(t *testing.T) {
+		resetTagsTestServer()
+		bogusResponseBody := "invalid_response"
+		nextRequestBody = &bogusResponseBody
+		hostTags := NewHostsTags(url, apiKey, applicationKey, nil)
+
+		tags := hostTags.GetTags()
+		if !reflect.DeepEqual(make(map[string][]string), tags) {
+			t.Errorf("Unexpected tags: %#v", tags)
+		}
+
+		// cleanup
+		hostTags.Stop()
 	})
 
 	// cleanup

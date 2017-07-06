@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"testing"
@@ -57,6 +58,11 @@ var expectedTags0 = map[string][]string{
 	"kernel":            []string{"kernel:none"},
 }
 
+var expectedTags1 = map[string][]string{
+	"foo":  []string{"bar"},
+	"name": []string{"name:my-aws-host"},
+}
+
 func TestHostTags(t *testing.T) {
 	// let's start a simple HTTP server to mock
 	httpServerPort := GetFreePort()
@@ -68,6 +74,10 @@ func TestHostTags(t *testing.T) {
 	url := "http://localhost:" + httpServerPortAsStr
 	apiKey := "my_awesome_api_key"
 	applicationKey := "my_awesome_application_key"
+	hostname, err := os.Hostname()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("it retrieves the tags at initialization time", func(t *testing.T) {
 		resetTagsTestServer()
@@ -78,7 +88,21 @@ func TestHostTags(t *testing.T) {
 			t.Errorf("Unexpected tags: %#v", tags)
 		}
 
-		// and there should have been exactly one request made to the server
+		// there should have been exactly one request made to the server
+		if requestCount != 1 {
+			t.Errorf("Unexpected number of requests: %v", requestCount)
+		}
+
+		// and it should be a GET request including the apiKey and the applicationKey
+		if lastRequest.Method != "GET" {
+			t.Errorf("Unexpected HTTP method: %v", lastRequest.Method)
+		}
+		if lastRequest.URL.Path != "/api/v1/tags/hosts/"+hostname {
+			t.Errorf("Unexpected URL route: %v", lastRequest.URL.Path)
+		}
+		if lastRequest.URL.RawQuery != "api_key=my_awesome_api_key&application_key=my_awesome_application_key" {
+			t.Errorf("Unexpected URL query string: %v", lastRequest.URL.RawQuery)
+		}
 
 		hostTags.Stop()
 	})

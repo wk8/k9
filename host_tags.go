@@ -80,7 +80,8 @@ func (hostTags *HostTags) fetchNewTags() (map[string][]string, error) {
 	}
 
 	url := fmt.Sprintf("%v/api/v1/tags/hosts/%v?api_key=%v&application_key=%v",
-		hostTags.ddUrl, hostTags.apiKey, hostTags.applicationKey)
+		hostTags.ddUrl, hostname, hostTags.apiKey, hostTags.applicationKey)
+	// TODO wkpo timeout!!
 	response, err := http.Get(url)
 	if response.StatusCode > 299 {
 		err = errors.New("status code: " + strconv.Itoa(response.StatusCode))

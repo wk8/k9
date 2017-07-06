@@ -7,9 +7,11 @@ import (
 )
 
 type Config struct {
-	PruningConfig *PruningConfig
-	ListenPort    int
-	DdUrl         string
+	PruningConfig  *PruningConfig
+	ListenPort     int
+	DdUrl          string
+	ApiKey         string
+	ApplicationKey string
 
 	path        string
 	logLevelSet bool
@@ -39,6 +41,8 @@ type configFileContent struct {
 	Log_level       string
 	Dd_Url          string
 	Listen_port     int
+	Api_key         string
+	Application_key string
 	Pruning_configs []string
 }
 

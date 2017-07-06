@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"regexp"
@@ -73,4 +74,19 @@ func AssertCrashes(t *testing.T, testCaseName string, testCase func()) string {
 func IsCircle() bool {
 	_, isCircle := os.LookupEnv("CIRCLECI")
 	return isCircle
+}
+
+// asks the kernel for a free open port that is ready to use
+func GetFreePort() int {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		panic(err)
+	}
+
+	listen, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		panic(err)
+	}
+	defer listen.Close()
+	return listen.Addr().(*net.TCPAddr).Port
 }

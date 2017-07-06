@@ -1,0 +1,6 @@
+{
+  "tags": [
+    "foo:bar",
+    "name:my-aws-host"
+  ]
+}

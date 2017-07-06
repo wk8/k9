@@ -1,0 +1,17 @@
+{
+  "tags": [
+    "region:us-east-1",
+    "security-group:sg-abcd1234",
+    "env:production",
+    "role:my_app",
+    "role:base",
+    "role:mysql",
+    "tag:aws",
+    "availability-zone:us-east-1a",
+    "security-group:sg-1234abcd",
+    "image:ami-12ab34cd",
+    "instance-type:m4.large",
+    "kernel:none",
+    "name:my-aws-host"
+  ]
+}

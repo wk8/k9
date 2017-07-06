@@ -15,11 +15,11 @@ import (
 	"time"
 )
 
-type testServer struct{}
+type proxyTestServer struct{}
 
 var lastRequest *http.Request
 
-func (server *testServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+func (server *proxyTestServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
 	lastRequest = request
 
 	responseWriter.Header()["X-Foo"] = []string{"bar"}
@@ -50,16 +50,16 @@ var client = &http.Client{Transport: transport}
 
 func TestProxy(t *testing.T) {
 	// let's start a simple HTTP server to proxy against
-	httpServerPort := getFreePort()
+	httpServerPort := GetFreePort()
 	httpServerPortAsStr := strconv.Itoa(httpServerPort)
-	httpServer := &http.Server{Addr: ":" + httpServerPortAsStr, Handler: &testServer{}}
+	httpServer := &http.Server{Addr: ":" + httpServerPortAsStr, Handler: &proxyTestServer{}}
 	previousLogLevel := setLogLevel(FATAL)
 
 	go func() { httpServer.ListenAndServe() }()
 
 	proxyTarget := "http://localhost:" + httpServerPortAsStr
 	startNewTestProxy := func(transformer RequestTransformer, optionalTimeouts ...time.Duration) (*HttpProxy, string) {
-		proxyPort := getFreePort()
+		proxyPort := GetFreePort()
 		proxyBaseUrl := "http://localhost:" + strconv.Itoa(proxyPort) + "/"
 
 		proxy := NewProxy(proxyTarget, transformer, optionalTimeouts...)
@@ -296,7 +296,7 @@ func TestProxy(t *testing.T) {
 
 	t.Run("when the backend fails to connect before the connect timeout expires",
 		func(t *testing.T) {
-			proxyPort := getFreePort()
+			proxyPort := GetFreePort()
 			proxy := NewProxy("http://10.255.255.1", nil, 1*time.Millisecond)
 			proxy.Start(proxyPort)
 			sleepIfCircle()
@@ -356,21 +356,6 @@ func TestProxy(t *testing.T) {
 }
 
 // Private helpers
-
-// asks the kernel for a free open port that is ready to use
-func getFreePort() int {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		panic(err)
-	}
-
-	listen, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		panic(err)
-	}
-	defer listen.Close()
-	return listen.Addr().(*net.TCPAddr).Port
-}
 
 // a transformer that does nothing
 type dummyTransformer struct{}

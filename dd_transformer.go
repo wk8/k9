@@ -11,7 +11,8 @@ import (
 )
 
 type DDTransformer struct {
-	config *PruningConfig
+	config   *PruningConfig
+	hostTags *HostTags
 }
 
 func (transformer *DDTransformer) Transform(request *http.Request) error {
@@ -35,6 +36,7 @@ func (transformer *DDTransformer) transformSeriesRequest(request *http.Request) 
 	// parse the JSON
 	var jsonDocument map[string]interface{}
 	jsonDecoder := json.NewDecoder(reader)
+	defer reader.Close()
 	err = jsonDecoder.Decode(&jsonDocument)
 	if err != nil {
 		return err

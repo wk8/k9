@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -17,10 +16,10 @@ import (
 
 type proxyTestServer struct{}
 
-var lastRequest *http.Request
+var proxyTestLastRequest *http.Request
 
 func (server *proxyTestServer) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	lastRequest = request
+	proxyTestLastRequest = request
 
 	responseWriter.Header()["X-Foo"] = []string{"bar"}
 
@@ -147,8 +146,8 @@ func TestProxy(t *testing.T) {
 			}
 
 			// and check that the header from the client made it to the server
-			if !reflect.DeepEqual(lastRequest.Header["X-Bar"], []string{"baz"}) {
-				t.Errorf("Unexpected header: %#v", lastRequest.Header["X-Bar"])
+			if !reflect.DeepEqual(proxyTestLastRequest.Header["X-Bar"], []string{"baz"}) {
+				t.Errorf("Unexpected header: %#v", proxyTestLastRequest.Header["X-Bar"])
 			}
 
 			proxy.Stop()
@@ -210,7 +209,7 @@ func TestProxy(t *testing.T) {
 		func(t *testing.T) {
 			proxy, proxyBaseUrl := startNewTestProxy(&testTransformer{})
 
-			lastRequest = nil
+			proxyTestLastRequest = nil
 
 			request, err := http.NewRequest("POST", proxyBaseUrl+"echo", bytes.NewBufferString("sadly, error!"))
 			if err != nil {
@@ -235,7 +234,7 @@ func TestProxy(t *testing.T) {
 			}
 
 			// and the server shouldn't have received any request
-			if lastRequest != nil {
+			if proxyTestLastRequest != nil {
 				t.Errorf("The server did receive a request")
 			}
 

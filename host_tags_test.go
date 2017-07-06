@@ -13,7 +13,7 @@ import (
 
 type hostTagsTestServer struct{}
 
-var lastRequest *http.Request
+var hostTagsTestLastRequest *http.Request
 var requestCount int
 var nextRequestBody *string
 
@@ -38,14 +38,14 @@ func (server *hostTagsTestServer) ServeHTTP(responseWriter http.ResponseWriter, 
 		panic(err)
 	}
 
-	lastRequest = request
+	hostTagsTestLastRequest = request
 	requestCount++
 }
 
 func resetTagsTestServer() {
 	// wait for the previous test to be completely done
 	time.Sleep(interval)
-	lastRequest = nil
+	hostTagsTestLastRequest = nil
 	requestCount = 0
 	nextRequestBody = nil
 }
@@ -99,14 +99,14 @@ func TestHostTags(t *testing.T) {
 		}
 
 		// and it should be a GET request including the apiKey and the applicationKey
-		if lastRequest.Method != "GET" {
-			t.Errorf("Unexpected HTTP method: %v", lastRequest.Method)
+		if hostTagsTestLastRequest.Method != "GET" {
+			t.Errorf("Unexpected HTTP method: %v", hostTagsTestLastRequest.Method)
 		}
-		if lastRequest.URL.Path != "/api/v1/tags/hosts/"+hostname {
-			t.Errorf("Unexpected URL route: %v", lastRequest.URL.Path)
+		if hostTagsTestLastRequest.URL.Path != "/api/v1/tags/hosts/"+hostname {
+			t.Errorf("Unexpected URL route: %v", hostTagsTestLastRequest.URL.Path)
 		}
-		if lastRequest.URL.RawQuery != "api_key=my_awesome_api_key&application_key=my_awesome_application_key" {
-			t.Errorf("Unexpected URL query string: %v", lastRequest.URL.RawQuery)
+		if hostTagsTestLastRequest.URL.RawQuery != "api_key=my_awesome_api_key&application_key=my_awesome_application_key" {
+			t.Errorf("Unexpected URL query string: %v", hostTagsTestLastRequest.URL.RawQuery)
 		}
 
 		// cleanup

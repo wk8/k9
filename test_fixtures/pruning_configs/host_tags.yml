@@ -1,0 +1,21 @@
+tags:
+  remove:
+    - metrics:
+      - my_app.**
+      tags:
+      - host
+      - instance-type
+      host_tags: true
+    - metrics:
+      - other_app.**
+      host_tags: true
+    - metrics:
+      - other_app.no_host
+      tags:
+      - host
+
+  keep:
+    - metrics:
+      - my_app.special
+      - other_app.special
+      host_tags: true

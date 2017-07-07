@@ -37,6 +37,8 @@ func (config *Config) maybeSetLogLevel(newLevel string) {
 	config.logLevelSet = err == nil
 }
 
+// TODO wkpo add unit test.... (after completing with README)
+// PLUS unit test on not there
 type configFileContent struct {
 	Log_level       string
 	Dd_Url          string

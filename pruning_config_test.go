@@ -185,6 +185,21 @@ func TestGlob(t *testing.T) {
 	}
 }
 
+func TestHostTags(t *testing.T) {
+	config := NewPruningConfig()
+	config.MergeWithFileOrGlob("test_fixtures/pruning_configs/host_tags.yml")
+
+	pruningConfig := config.ConfigFor("my_app.my_metric")
+	expectedPruningConfig := &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{"host": true, "instance-type": true},
+		KeepHostTags: false,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
+}
+
 // Private helpers
 
 func compareConfigTrees(t *testing.T, expected, actual *configNode, currentPath string) {

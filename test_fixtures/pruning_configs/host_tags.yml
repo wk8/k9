@@ -1,3 +1,5 @@
+# should showcase all the different cases for host tags
+
 tags:
   remove:
     - metrics:
@@ -10,12 +12,21 @@ tags:
       - other_app.**
       host_tags: true
     - metrics:
-      - other_app.no_host
+      - other_app.no_host.*
       tags:
       - host
+    - metrics:
+      - nothing_fancy
+      tags:
+      - host
+    - metrics:
+      - keep_host
+      tags:
+      - whatever
 
   keep:
     - metrics:
       - my_app.special
       - other_app.special
+      - other_app.no_host.special
       host_tags: true

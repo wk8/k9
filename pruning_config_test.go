@@ -198,6 +198,76 @@ func TestHostTags(t *testing.T) {
 	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
 		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
 	}
+
+	pruningConfig = config.ConfigFor("my_app.special")
+	expectedPruningConfig = &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{"host": true, "instance-type": true},
+		KeepHostTags: true,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
+
+	pruningConfig = config.ConfigFor("other_app.my_metric")
+	expectedPruningConfig = &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{},
+		KeepHostTags: false,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
+
+	pruningConfig = config.ConfigFor("other_app.special")
+	expectedPruningConfig = &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{},
+		KeepHostTags: false,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
+
+	pruningConfig = config.ConfigFor("other_app.no_host.my_metric")
+	expectedPruningConfig = &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{"host": true},
+		KeepHostTags: false,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
+
+	pruningConfig = config.ConfigFor("other_app.no_host.special")
+	expectedPruningConfig = &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{"host": true},
+		KeepHostTags: true,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
+
+	pruningConfig = config.ConfigFor("nothing_fancy")
+	expectedPruningConfig = &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{"host": true},
+		KeepHostTags: true,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
+
+	pruningConfig = config.ConfigFor("keep_host")
+	expectedPruningConfig = &MetricPruningConfig{
+		Remove:       false,
+		RemoveTags:   map[string]bool{"whatever": true},
+		KeepHostTags: false,
+	}
+	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
+		t.Errorf("Unexpected pruning config: %#v", pruningConfig)
+	}
 }
 
 // Private helpers

@@ -89,9 +89,9 @@ func resolveConfigFor(path []string, currentIndex int, currentNode *configNode,
 }
 
 type pruningConfigFileContentTagsConfig struct {
-	Metrics  []string
-	Tags     []string
-	HostTags bool
+	Metrics   []string
+	Tags      []string
+	Host_tags bool
 }
 
 type pruningConfigFileContent struct {
@@ -171,12 +171,12 @@ func (config *PruningConfig) mergeTags(tagsConfigs []pruningConfigFileContentTag
 			if keep {
 				value = configValue{
 					keepTags:     tags,
-					keepHostTags: metricsAndTags.HostTags,
+					keepHostTags: metricsAndTags.Host_tags,
 				}
 			} else {
 				value = configValue{
 					removeTags:     tags,
-					removeHostTags: metricsAndTags.HostTags,
+					removeHostTags: metricsAndTags.Host_tags,
 				}
 			}
 

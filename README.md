@@ -8,7 +8,7 @@ k9 is a very lightweight HTTP proxy sitting in between your [DataDog](https://ww
 
 And it's not always trivial to keep the volume of custom metrics in check:
 * histograms metrics actually count as 5 different metrics by default: min, max, average, median, and 95th percentile. And [while the agent's configuration does allow cherry-picking which of those you want](https://github.com/DataDog/dd-agent/blob/5.14.1/datadog.conf.example#L103-L104), it only does that on a per-host basis: you can't say you want the 5 default metrics for some histograms, but only the average for some others ([and they don't want to make that a feature, either](https://github.com/DataDog/dd-agent/pull/3238))
-* the Datadog agent ties everything back to an host; but sometimes you don't really care much about the value of a metric on any given host, rather on a cluster of hosts (see [the configuration section about host tags below](TODO wkpo link))
+* the Datadog agent ties everything back to an host; but sometimes you don't really care much about the value of a metric on any given host, rather on a cluster of hosts (see [the configuration section about host tags below](https://github.com/tripping/k9/tree/master#host-tags))
 * some Datadog integration libraries out there make it very easy to plug and play to for example profile your application, but they don't have hooks to cherry-pick which metrics you acutally care about
 * same goes for global tags that some libraries allow using: you might not care about these for all your custom metrics
 
@@ -42,7 +42,7 @@ listen_port: 8284
 dd_url: https://my_private.datadoghq.com
 
 # API and application key for Datadog
-# (only needed if you wish to remove host tags, see TODO wkpo link below)
+# (only needed if you wish to remove host tags, see https://github.com/tripping/k9/tree/master#host-tags below)
 api_key: 9775a026f1ca7d1c6c5af9d94d9595a4
 application_key: 87ce4a24b5553d2e482ea8a8500e71b8ad4554ff
 ```

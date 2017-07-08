@@ -14,6 +14,7 @@ listen_port: 8284
 dd_url: https://my_private.datadoghq.com
 
 # API and application key for Datadog
-# (only needed if you wish to remove host tags, see TODO wkpo link below)
+# (only needed if you wish to remove host tags, see
+# https://github.com/tripping/k9/tree/master#host-tags)
 api_key: 9775a026f1ca7d1c6c5af9d94d9595a4
 application_key: 87ce4a24b5553d2e482ea8a8500e71b8ad4554ff

@@ -140,12 +140,10 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 		}
 
 		// host tags, if relevant
-		if pruningConfig.KeepHostTags {
-			if transformer.HostTags != nil {
-				for hostTagName, hostTagValues := range transformer.HostTags.GetTags() {
-					if !pruningConfig.RemoveTags[hostTagName] {
-						newTags = append(newTags, hostTagValues...)
-					}
+		if pruningConfig.KeepHostTags && transformer.HostTags != nil {
+			for hostTagName, hostTagValues := range transformer.HostTags.GetTags() {
+				if !pruningConfig.RemoveTags[hostTagName] {
+					newTags = append(newTags, hostTagValues...)
 				}
 			}
 		}

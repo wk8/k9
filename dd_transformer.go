@@ -133,6 +133,12 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 			}
 		}
 
+		// remove the host if needed
+		// TODO wkpo next unit test on this
+		if pruningConfig.RemoveHost {
+			delete(metric, "host")
+		}
+
 		// host tags, if relevant
 		if pruningConfig.KeepHostTags {
 			if transformer.HostTags != nil {

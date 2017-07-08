@@ -108,6 +108,12 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 			continue
 		}
 
+		// remove the host if needed
+		// TODO wkpo next unit test on this
+		if pruningConfig.RemoveHost {
+			delete(metric, "host")
+		}
+
 		// now to tags
 		newTags := []string{}
 
@@ -130,12 +136,6 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 			} else {
 				logWarn("Unexpected metric in a series JSON (tags): %#v", rawMetric)
 			}
-		}
-
-		// remove the host if needed
-		// TODO wkpo next unit test on this
-		if pruningConfig.RemoveHost {
-			delete(metric, "host")
 		}
 
 		// host tags, if relevant

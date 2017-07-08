@@ -74,7 +74,7 @@ var expectedTags1 = map[string][]string{
 	"name": []string{"name:my-aws-host"},
 }
 
-func TestHostTags(t *testing.T) {
+func TestHostTagsBasicUsage(t *testing.T) {
 	// let's start a simple HTTP server to mock
 	httpServerPort := GetFreePort()
 	httpServerPortAsStr := strconv.Itoa(httpServerPort)

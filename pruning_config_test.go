@@ -193,6 +193,7 @@ func TestHostTags(t *testing.T) {
 	expectedPruningConfig := &MetricPruningConfig{
 		Remove:       false,
 		RemoveTags:   map[string]bool{"host": true, "instance-type": true},
+		RemoveHost:   true,
 		KeepHostTags: false,
 	}
 	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
@@ -203,6 +204,7 @@ func TestHostTags(t *testing.T) {
 	expectedPruningConfig = &MetricPruningConfig{
 		Remove:       false,
 		RemoveTags:   map[string]bool{"host": true, "instance-type": true},
+		RemoveHost:   true,
 		KeepHostTags: true,
 	}
 	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
@@ -233,6 +235,7 @@ func TestHostTags(t *testing.T) {
 	expectedPruningConfig = &MetricPruningConfig{
 		Remove:       false,
 		RemoveTags:   map[string]bool{"host": true},
+		RemoveHost:   true,
 		KeepHostTags: false,
 	}
 	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
@@ -243,6 +246,7 @@ func TestHostTags(t *testing.T) {
 	expectedPruningConfig = &MetricPruningConfig{
 		Remove:       false,
 		RemoveTags:   map[string]bool{"host": true},
+		RemoveHost:   true,
 		KeepHostTags: true,
 	}
 	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {
@@ -253,6 +257,7 @@ func TestHostTags(t *testing.T) {
 	expectedPruningConfig = &MetricPruningConfig{
 		Remove:       false,
 		RemoveTags:   map[string]bool{"host": true},
+		RemoveHost:   true,
 		KeepHostTags: true,
 	}
 	if !reflect.DeepEqual(pruningConfig, expectedPruningConfig) {

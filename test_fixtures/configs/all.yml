@@ -12,3 +12,8 @@ listen_port: 8284
 # same as the DD agent's dd_url config parameter, similarly defaults to
 # https://app.datadoghq.com
 dd_url: https://my_private.datadoghq.com
+
+# API and application key for Datadog
+# (only needed if you wish to remove host tags, see TODO wkpo link below)
+api_key: 9775a026f1ca7d1c6c5af9d94d9595a4
+application_key: 87ce4a24b5553d2e482ea8a8500e71b8ad4554ff

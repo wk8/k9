@@ -37,8 +37,6 @@ func (config *Config) maybeSetLogLevel(newLevel string) {
 	config.logLevelSet = err == nil
 }
 
-// TODO wkpo add unit test.... (after completing with README)
-// PLUS unit test on not there
 type configFileContent struct {
 	Log_level       string
 	Dd_Url          string
@@ -71,6 +69,8 @@ func (config *Config) load(initialLoad bool) {
 	if initialLoad {
 		config.ListenPort = content.Listen_port
 		config.DdUrl = content.Dd_Url
+		config.ApiKey = content.Api_key
+		config.ApplicationKey = content.Application_key
 	}
 }
 

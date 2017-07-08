@@ -24,9 +24,11 @@ func TestNewConfig(t *testing.T) {
 		}
 
 		expectedConfig := &Config{
-			PruningConfig: expectedPruningConfig,
-			ListenPort:    8284,
-			DdUrl:         "https://my_private.datadoghq.com",
+			PruningConfig:  expectedPruningConfig,
+			ListenPort:     8284,
+			DdUrl:          "https://my_private.datadoghq.com",
+			ApiKey:         "9775a026f1ca7d1c6c5af9d94d9595a4",
+			ApplicationKey: "87ce4a24b5553d2e482ea8a8500e71b8ad4554ff",
 
 			path:        "test_fixtures/configs/all.yml",
 			logLevelSet: true,

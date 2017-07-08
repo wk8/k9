@@ -34,6 +34,7 @@ type MetricPruningConfig struct {
 	Remove       bool
 	RemoveTags   map[string]bool
 	KeepHostTags bool
+	// TODO wkpo next en fait on devrait avoir un field additionel icite: RemoveHost
 }
 
 func NewPruningConfig() (config *PruningConfig) {

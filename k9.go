@@ -28,8 +28,12 @@ func main() {
 	}
 	config := NewConfig(*configPath, *logLevel)
 
+	// build the transformer
+	// TODO wkpo
+	transformer := &DDTransformer{Config: config.PruningConfig}
+
 	// start the proxy
-	proxy := NewProxy(config.DdUrl, &DDTransformer{config: config.PruningConfig})
+	proxy := NewProxy(config.DdUrl, transformer)
 	proxy.Start(config.ListenPort)
 
 	// then listen for signals

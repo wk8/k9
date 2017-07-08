@@ -11,14 +11,14 @@ import (
 )
 
 type DDTransformer struct {
-	config *PruningConfig
+	Config *PruningConfig
 	// TODO wkpo actually use that shit:
 	// 1. add a `keepHostTags` field to remove tags sections, defaulting to true, can be overriden to false, and then overriden back to true
 	// 2. in MetricPruningConfig structs, add a `addHostTags` bool, which is there when 'host' is in the list of tags to remove AND keepHostTagsis true for that metric
 	// 3. here, when addHostTags is true, then need to fetch them, make them go through the list of tags to remove anyhow
 	// 4. update unit tests
 	// 5. update the README
-	hostTags *HostTags
+	HostTags *HostTags
 }
 
 func (transformer *DDTransformer) Transform(request *http.Request) error {
@@ -103,21 +103,19 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 			continue
 		}
 
-		pruningConfig := transformer.config.ConfigFor(name)
+		pruningConfig := transformer.Config.ConfigFor(name)
 		if pruningConfig.Remove {
 			continue
 		}
 
-		// might seem weird, but the agent does sometimes send a `null` value for tags
-		if rawTags, present := metric["tags"]; present && rawTags != nil {
-			if rawTags != nil {
-				tags, ok := rawTags.([]interface{})
-				if !ok {
-					logWarn("Unexpected metric in a series JSON (tags): %#v", rawMetric)
-					continue
-				}
+		// now to tags
+		newTags := []string{}
 
-				newTags := []string{}
+		// might seem weird, but the agent does sometimes send a `null` value for tags
+		rawTags, present := metric["tags"]
+		if present && rawTags != nil {
+			tags, ok := rawTags.([]interface{})
+			if ok {
 				for _, rawTag := range tags {
 					tag, ok := rawTag.(string)
 					if !ok || tag == "" {
@@ -130,13 +128,28 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 						newTags = append(newTags, tag)
 					}
 				}
+			} else {
+				logWarn("Unexpected metric in a series JSON (tags): %#v", rawMetric)
+			}
+		}
 
-				if len(newTags) == 0 {
-					delete(metric, "tags")
-				} else {
-					metric["tags"] = newTags
+		// host tags, if relevant
+		if pruningConfig.KeepHostTags {
+			if transformer.HostTags != nil {
+				for hostTagName, hostTagValues := range transformer.HostTags.GetTags() {
+					if !pruningConfig.RemoveTags[hostTagName] {
+						newTags = append(newTags, hostTagValues...)
+					}
 				}
 			}
+		}
+
+		if len(newTags) == 0 {
+			if rawTags != nil {
+				delete(metric, "tags")
+			}
+		} else {
+			metric["tags"] = newTags
 		}
 
 		newSeries = append(newSeries, metric)

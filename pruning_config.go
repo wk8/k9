@@ -33,8 +33,8 @@ type configValue struct {
 type MetricPruningConfig struct {
 	Remove       bool
 	RemoveTags   map[string]bool
+	RemoveHost   bool
 	KeepHostTags bool
-	// TODO wkpo next en fait on devrait avoir un field additionel icite: RemoveHost
 }
 
 func NewPruningConfig() (config *PruningConfig) {
@@ -239,10 +239,12 @@ func (configValue *configValue) toMetricPruningConfig() *MetricPruningConfig {
 			}
 		}
 
-		keepHostTags := removeTags["host"] && (configValue.keepHostTags || !configValue.removeHostTags)
+		removeHost := removeTags["host"]
+		keepHostTags := removeHost && (configValue.keepHostTags || !configValue.removeHostTags)
 
 		return &MetricPruningConfig{
 			RemoveTags:   removeTags,
+			RemoveHost:   removeHost,
 			KeepHostTags: keepHostTags,
 		}
 	}

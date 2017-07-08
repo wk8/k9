@@ -114,8 +114,7 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 		// might seem weird, but the agent does sometimes send a `null` value for tags
 		rawTags, present := metric["tags"]
 		if present && rawTags != nil {
-			tags, ok := rawTags.([]interface{})
-			if ok {
+			if tags, ok := rawTags.([]interface{}); ok {
 				for _, rawTag := range tags {
 					tag, ok := rawTag.(string)
 					if !ok || tag == "" {

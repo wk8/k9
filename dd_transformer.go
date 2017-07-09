@@ -109,7 +109,7 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 		}
 
 		// remove the host if needed
-		// TODO wkpo next unit test on this
+		// TODO wkpo next unit test on this, by using an interface for the hostTags
 		if pruningConfig.RemoveHost {
 			delete(metric, "host")
 		}

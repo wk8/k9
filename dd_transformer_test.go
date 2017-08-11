@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -14,7 +15,7 @@ import (
 func TestDDTransformerProcess(t *testing.T) {
 	config := NewPruningConfig()
 	config.MergeWithFileOrGlob("test_fixtures/pruning_configs/full.yml")
-	transformer := &DDTransformer{Config: config}
+	transformer := &DDTransformer{config: config}
 
 	t.Run("it doesn't change requests other than POSTs to /api/v1/series/", func(t *testing.T) {
 		body := "hey you"
@@ -196,6 +197,45 @@ func TestDDTransformerProcess(t *testing.T) {
 	})
 }
 
+func TestDDTransformerProcessWithHostTags(t *testing.T) {
+	config := NewPruningConfig()
+	config.MergeWithFileOrGlob("test_fixtures/pruning_configs/host_tags.yml")
+	transformer := NewTransformer(config, &dummyHostTags{})
+
+	t.Run("for a metric for which it should remove the host and not keep host tags", func(t *testing.T) {
+		request := singleMetricRequest(t, "my_app.my_metric")
+		if err := transformer.Transform(request); err != nil {
+			t.Fatal(err)
+		}
+
+		if b := readBody(t, request); b != singleMetricExpectedOutput("my_app.my_metric", false, false) {
+			t.Errorf("Unexpected body: %v", b)
+		}
+	})
+
+	t.Run("for a metric for which it should remove the host and add host tags", func(t *testing.T) {
+		request := singleMetricRequest(t, "my_app.special")
+		if err := transformer.Transform(request); err != nil {
+			t.Fatal(err)
+		}
+
+		if b := readBody(t, request); b != singleMetricExpectedOutput("my_app.special", false, true) {
+			t.Errorf("Unexpected body: %v", b)
+		}
+	})
+
+	t.Run("for a metric for which it shouldn't remove the host", func(t *testing.T) {
+		request := singleMetricRequest(t, "other_app.my_metric")
+		if err := transformer.Transform(request); err != nil {
+			t.Fatal(err)
+		}
+
+		if b := readBody(t, request); b != singleMetricExpectedOutput("other_app.my_metric", true, false) {
+			t.Errorf("Unexpected body: %v", b)
+		}
+	})
+}
+
 // Private helpers
 
 func readBody(t *testing.T, request *http.Request) string {
@@ -205,4 +245,70 @@ func readBody(t *testing.T, request *http.Request) string {
 		t.Fatal(err)
 	}
 	return string(bodyAsBytes)
+}
+
+type dummyHostTags struct{}
+
+func (*dummyHostTags) GetTags() map[string][]string {
+	return map[string][]string{
+		"instance-type":  []string{"instance-type:m4.large"},
+		"security-group": []string{"security-group:sg-abcd1234", "security-group:sg-1234abcd"},
+		"role":           []string{"role:base", "role:mysql"},
+		"tag":            []string{"tag:aws"},
+	}
+}
+
+func singleMetricRequest(t *testing.T, metricName string) *http.Request {
+	reader := strings.NewReader(singleMetricInput(metricName))
+	request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return request
+}
+
+func singleMetricInput(metricName string) string {
+	return fmt.Sprintf(
+		`{
+           "series": [
+             {
+               "tags": [
+                 "success:true",
+                 "timed_out:false",
+                 "version:87003923341fc1e43469a50bb2e5b6b141210d40",
+                 "role:my_app"
+               ],
+               "metric": "%v",
+               "interval": 10.0,
+               "device_name": null,
+               "host": "staging-004-e1a",
+               "points": [
+                 [
+                   1497975500.0,
+                   104.0
+                 ]
+               ],
+               "type": "gauge"
+             }
+           ]
+         }`, metricName)
+}
+
+// a tad ugly, but eh less painful than dealing with JSONs again...
+func singleMetricExpectedOutput(metricName string, keptHost, hostTagsAdded bool) string {
+	format := `{"series":[{"device_name":null,`
+
+	if keptHost {
+		format += `"host":"staging-004-e1a",`
+	}
+
+	format += `"interval":10,"metric":"%v","points":[[1497975500,104]],"tags":["success:true","timed_out:false","version:87003923341fc1e43469a50bb2e5b6b141210d40","role:my_app"`
+
+	if hostTagsAdded {
+		format += `,"security-group:sg-abcd1234","security-group:sg-1234abcd","role:base","role:mysql","tag:aws"`
+	}
+
+	format += `],"type":"gauge"}]}`
+
+	return fmt.Sprintf(format, metricName)
 }

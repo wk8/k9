@@ -1,0 +1,23 @@
+{
+  "series": [
+    {
+      "tags": [
+        "success:true",
+        "timed_out:false",
+        "version:87003923341fc1e43469a50bb2e5b6b141210d40",
+        "role:my_app"
+      ],
+      "metric": "my_app.my_metric",
+      "interval": 10.0,
+      "device_name": null,
+      "host": "staging-004-e1a",
+      "points": [
+        [
+          1497975500.0,
+          104.0
+        ]
+      ],
+      "type": "gauge"
+    }
+  ]
+}

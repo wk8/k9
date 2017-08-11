@@ -10,15 +10,21 @@ import (
 	"strings"
 )
 
+type HostTagsRetriever interface {
+	GetTags() map[string][]string
+}
+
 type DDTransformer struct {
-	Config *PruningConfig
-	// TODO wkpo actually use that shit:
-	// 1. add a `keepHostTags` field to remove tags sections, defaulting to true, can be overriden to false, and then overriden back to true
-	// 2. in MetricPruningConfig structs, add a `addHostTags` bool, which is there when 'host' is in the list of tags to remove AND keepHostTagsis true for that metric
-	// 3. here, when addHostTags is true, then need to fetch them, make them go through the list of tags to remove anyhow
-	// 4. update unit tests
-	// 5. update the README
-	HostTags *HostTags
+	config   *PruningConfig
+	hostTags HostTagsRetriever
+}
+
+// TODO wkpo use
+func NewTransformer(config *PruningConfig, hostTags HostTagsRetriever) *DDTransformer {
+	return &DDTransformer{
+		config:   config,
+		hostTags: hostTags,
+	}
 }
 
 func (transformer *DDTransformer) Transform(request *http.Request) error {
@@ -103,7 +109,7 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 			continue
 		}
 
-		pruningConfig := transformer.Config.ConfigFor(name)
+		pruningConfig := transformer.config.ConfigFor(name)
 		if pruningConfig.Remove {
 			continue
 		}
@@ -139,8 +145,8 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 		}
 
 		// host tags, if relevant
-		if pruningConfig.KeepHostTags && transformer.HostTags != nil {
-			for hostTagName, hostTagValues := range transformer.HostTags.GetTags() {
+		if pruningConfig.KeepHostTags && transformer.hostTags != nil {
+			for hostTagName, hostTagValues := range transformer.hostTags.GetTags() {
 				if !pruningConfig.RemoveTags[hostTagName] {
 					newTags = append(newTags, hostTagValues...)
 				}

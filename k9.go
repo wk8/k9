@@ -28,9 +28,11 @@ func main() {
 	}
 	config := NewConfig(*configPath, *logLevel)
 
+	// build the host tags retriever
+	hostTags := NewHostsTags(config.DdUrl, config.ApiKey, config.ApplicationKey, nil)
+
 	// build the transformer
-	// TODO wkpo
-	transformer := &DDTransformer{Config: config.PruningConfig}
+	transformer := NewTransformer(config.PruningConfig, hostTags)
 
 	// start the proxy
 	proxy := NewProxy(config.DdUrl, transformer)

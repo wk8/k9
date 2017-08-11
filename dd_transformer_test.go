@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -202,14 +203,15 @@ func TestDDTransformerProcessWithHostTags(t *testing.T) {
 	config.MergeWithFileOrGlob("test_fixtures/pruning_configs/host_tags.yml")
 	transformer := NewTransformer(config, &dummyHostTags{})
 
-	t.Run("for a metric for which it should remove the host and not keep host tags", func(t *testing.T) {
+	t.Run("for a metric for which it should remove the host and not add host tags", func(t *testing.T) {
 		request := singleMetricRequest(t, "my_app.my_metric")
 		if err := transformer.Transform(request); err != nil {
 			t.Fatal(err)
 		}
 
-		if b := readBody(t, request); b != singleMetricExpectedOutput("my_app.my_metric", false, false) {
-			t.Errorf("Unexpected body: %v", b)
+		expectedOutput := singleMetricExpectedOutput(t, "my_app.my_metric", true, []string{})
+		if actualOutput := normalizeSeries(parseJson(t, readBody(t, request))); !reflect.DeepEqual(expectedOutput, actualOutput) {
+			t.Errorf("Unexpected body:\n%v\nVS expected:\n%v", jsonEncode(t, actualOutput), jsonEncode(t, expectedOutput))
 		}
 	})
 
@@ -219,8 +221,12 @@ func TestDDTransformerProcessWithHostTags(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if b := readBody(t, request); b != singleMetricExpectedOutput("my_app.special", false, true) {
-			t.Errorf("Unexpected body: %v", b)
+		// no instance-type in there, since the pruning config specifies to
+		// remove that one
+		expectedHostTags := []string{"security-group:sg-abcd1234", "security-group:sg-1234abcd", "role:base", "role:mysql", "tag:aws"}
+		expectedOutput := singleMetricExpectedOutput(t, "my_app.special", true, expectedHostTags)
+		if actualOutput := normalizeSeries(parseJson(t, readBody(t, request))); !reflect.DeepEqual(expectedOutput, actualOutput) {
+			t.Errorf("Unexpected body:\n%v\nVS expected:\n%v", jsonEncode(t, actualOutput), jsonEncode(t, expectedOutput))
 		}
 	})
 
@@ -230,8 +236,9 @@ func TestDDTransformerProcessWithHostTags(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if b := readBody(t, request); b != singleMetricExpectedOutput("other_app.my_metric", true, false) {
-			t.Errorf("Unexpected body: %v", b)
+		expectedOutput := singleMetricExpectedOutput(t, "other_app.my_metric", false, []string{})
+		if actualOutput := normalizeSeries(parseJson(t, readBody(t, request))); !reflect.DeepEqual(expectedOutput, actualOutput) {
+			t.Errorf("Unexpected body:\n%v\nVS expected:\n%v", jsonEncode(t, actualOutput), jsonEncode(t, expectedOutput))
 		}
 	})
 }
@@ -259,7 +266,7 @@ func (*dummyHostTags) GetTags() map[string][]string {
 }
 
 func singleMetricRequest(t *testing.T, metricName string) *http.Request {
-	reader := strings.NewReader(singleMetricInput(metricName))
+	reader := strings.NewReader(singleMetricjsonDocument(metricName))
 	request, err := http.NewRequest("POST", "http://localhost:8283/api/v1/series/", reader)
 	if err != nil {
 		t.Fatal(err)
@@ -267,7 +274,7 @@ func singleMetricRequest(t *testing.T, metricName string) *http.Request {
 	return request
 }
 
-func singleMetricInput(metricName string) string {
+func singleMetricjsonDocument(metricName string) string {
 	return fmt.Sprintf(
 		`{
            "series": [
@@ -294,21 +301,64 @@ func singleMetricInput(metricName string) string {
          }`, metricName)
 }
 
-// a tad ugly, but eh less painful than dealing with JSONs again...
-func singleMetricExpectedOutput(metricName string, keptHost, hostTagsAdded bool) string {
-	format := `{"series":[{"device_name":null,`
+func singleMetricExpectedOutput(t *testing.T, metricName string, removeHost bool, hostTagsToAdd []string) map[string]interface{} {
+	jsonDocument := parseJson(t, singleMetricjsonDocument(metricName))
 
-	if keptHost {
-		format += `"host":"staging-004-e1a",`
+	series := jsonDocument["series"].([]interface{})
+	metric := series[0].(map[string]interface{})
+
+	if removeHost {
+		delete(metric, "host")
+	}
+	metric["tags"] = append(castSliceToStrings(metric["tags"].([]interface{})), hostTagsToAdd...)
+
+	jsonDocument["series"] = []interface{}{metric}
+
+	return normalizeSeries(jsonDocument)
+}
+
+func parseJson(t *testing.T, jsonInput string) map[string]interface{} {
+	var jsonDocument map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonInput), &jsonDocument); err != nil {
+		t.Fatal(err)
+	}
+	return jsonDocument
+}
+
+func jsonEncode(t *testing.T, jsonDocument map[string]interface{}) string {
+	jsonOutput, err := json.Marshal(jsonDocument)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	format += `"interval":10,"metric":"%v","points":[[1497975500,104]],"tags":["success:true","timed_out:false","version:87003923341fc1e43469a50bb2e5b6b141210d40","role:my_app"`
+	return string(jsonOutput)
+}
 
-	if hostTagsAdded {
-		format += `,"security-group:sg-abcd1234","security-group:sg-1234abcd","role:base","role:mysql","tag:aws"`
+// because there's no ordering guarantee on how the tags from the host tags
+// retriever will be iterated over, we can't just compare JSONs as is: the tags
+// ordering might be different than expected
+func normalizeSeries(jsonDocument map[string]interface{}) map[string]interface{} {
+	series := jsonDocument["series"].([]interface{})
+
+	for _, rawMetric := range series {
+		metric := rawMetric.(map[string]interface{})
+		rawTags := metric["tags"]
+		tags, ok := rawTags.([]string)
+		if !ok {
+			tags = castSliceToStrings(rawTags.([]interface{}))
+		}
+
+		sort.Sort(sort.StringSlice(tags))
+		metric["tags"] = tags
 	}
 
-	format += `],"type":"gauge"}]}`
+	return jsonDocument
+}
 
-	return fmt.Sprintf(format, metricName)
+func castSliceToStrings(slice []interface{}) []string {
+	strings := []string{}
+	for _, item := range slice {
+		strings = append(strings, item.(string))
+	}
+	return strings
 }

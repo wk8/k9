@@ -19,7 +19,6 @@ type DDTransformer struct {
 	hostTags HostTagsRetriever
 }
 
-// TODO wkpo use
 func NewTransformer(config *PruningConfig, hostTags HostTagsRetriever) *DDTransformer {
 	return &DDTransformer{
 		config:   config,
@@ -115,7 +114,6 @@ func (transformer *DDTransformer) transformSeriesRequestJson(jsonDocument map[st
 		}
 
 		// remove the host if needed
-		// TODO wkpo next unit test on this, by using an interface for the hostTags
 		if pruningConfig.RemoveHost {
 			delete(metric, "host")
 		}

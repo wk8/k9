@@ -54,6 +54,8 @@ func TestNewConfig(t *testing.T) {
 
 		expectedConfig := &Config{
 			PruningConfig: expectedPruningConfig,
+			ListenPort:    8283,
+			DdUrl:         "https://app.datadoghq.com",
 
 			path:        "test_fixtures/configs/just_pruning_confs_1.yml",
 			logLevelSet: false,

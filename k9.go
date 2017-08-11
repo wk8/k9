@@ -29,7 +29,10 @@ func main() {
 	config := NewConfig(*configPath, *logLevel)
 
 	// build the host tags retriever
-	hostTags := NewHostsTags(config.DdUrl, config.ApiKey, config.ApplicationKey, nil)
+	var hostTags *HostTags
+	if config.ApiKey != "" && config.ApplicationKey != "" {
+		hostTags = NewHostsTags(config.DdUrl, config.ApiKey, config.ApplicationKey, nil)
+	}
 
 	// build the transformer
 	transformer := NewTransformer(config.PruningConfig, hostTags)

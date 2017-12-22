@@ -1,3 +1,5 @@
+[![Build Status](https://circleci.com/gh/wk8/k9.png?style=shield)](https://circleci.com/gh/wk8/k9)
+
 # k9 - a police dog to watch over DataDog
 
 k9 is a very lightweight HTTP proxy sitting in between your [DataDog](https://www.datadoghq.com/) agent and the Datadog API, and removing the metrics and/or tags you don't really need.

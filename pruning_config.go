@@ -22,15 +22,19 @@ type configNode struct {
 }
 
 type configValue struct {
-	remove     bool
-	keep       bool
-	removeTags map[string]bool
-	keepTags   map[string]bool
+	remove         bool
+	keep           bool
+	removeTags     map[string]bool
+	keepTags       map[string]bool
+	keepHostTags   bool
+	removeHostTags bool
 }
 
 type MetricPruningConfig struct {
-	Remove     bool
-	RemoveTags map[string]bool
+	Remove       bool
+	RemoveTags   map[string]bool
+	RemoveHost   bool
+	KeepHostTags bool
 }
 
 func NewPruningConfig() (config *PruningConfig) {
@@ -86,8 +90,9 @@ func resolveConfigFor(path []string, currentIndex int, currentNode *configNode,
 }
 
 type pruningConfigFileContentTagsConfig struct {
-	Metrics []string
-	Tags    []string
+	Metrics   []string
+	Tags      []string
+	Host_tags bool
 }
 
 type pruningConfigFileContent struct {
@@ -157,17 +162,23 @@ func (config *PruningConfig) merge(content *pruningConfigFileContent) {
 
 func (config *PruningConfig) mergeTags(tagsConfigs []pruningConfigFileContentTagsConfig, keep bool) {
 	for _, metricsAndTags := range tagsConfigs {
-		for _, metric := range metricsAndTags.Metrics {
-			tags := make(map[string]bool)
-			for _, tag := range metricsAndTags.Tags {
-				tags[tag] = true
-			}
+		tags := make(map[string]bool)
+		for _, tag := range metricsAndTags.Tags {
+			tags[tag] = true
+		}
 
+		for _, metric := range metricsAndTags.Metrics {
 			var value configValue
 			if keep {
-				value = configValue{keepTags: tags}
+				value = configValue{
+					keepTags:     tags,
+					keepHostTags: metricsAndTags.Host_tags,
+				}
 			} else {
-				value = configValue{removeTags: tags}
+				value = configValue{
+					removeTags:     tags,
+					removeHostTags: metricsAndTags.Host_tags,
+				}
 			}
 
 			config.mergeNode(metric, &value)
@@ -201,6 +212,8 @@ func (value *configValue) merge(other *configValue) {
 
 	value.remove = value.remove || other.remove
 	value.keep = value.keep || other.keep
+	value.removeHostTags = value.removeHostTags || other.removeHostTags
+	value.keepHostTags = value.keepHostTags || other.keepHostTags
 
 	if other.removeTags != nil {
 		for tag, _ := range other.removeTags {
@@ -226,7 +239,14 @@ func (configValue *configValue) toMetricPruningConfig() *MetricPruningConfig {
 			}
 		}
 
-		return &MetricPruningConfig{RemoveTags: removeTags}
+		removeHost := removeTags["host"]
+		keepHostTags := removeHost && (configValue.keepHostTags || !configValue.removeHostTags)
+
+		return &MetricPruningConfig{
+			RemoveTags:   removeTags,
+			RemoveHost:   removeHost,
+			KeepHostTags: keepHostTags,
+		}
 	}
 }
 

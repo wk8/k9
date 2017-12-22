@@ -7,9 +7,11 @@ import (
 )
 
 type Config struct {
-	PruningConfig *PruningConfig
-	ListenPort    int
-	DdUrl         string
+	PruningConfig  *PruningConfig
+	ListenPort     int
+	DdUrl          string
+	ApiKey         string
+	ApplicationKey string
 
 	path        string
 	logLevelSet bool
@@ -18,6 +20,8 @@ type Config struct {
 func NewConfig(path, logLevel string) *Config {
 	config := &Config{
 		PruningConfig: NewPruningConfig(),
+		ListenPort:    8283,
+		DdUrl:         "https://app.datadoghq.com",
 		path:          path,
 	}
 	config.maybeSetLogLevel(logLevel)
@@ -39,6 +43,8 @@ type configFileContent struct {
 	Log_level       string
 	Dd_Url          string
 	Listen_port     int
+	Api_key         string
+	Application_key string
 	Pruning_configs []string
 }
 
@@ -63,8 +69,14 @@ func (config *Config) load(initialLoad bool) {
 	config.loadPruningConfig(content.Pruning_configs, initialLoad)
 
 	if initialLoad {
-		config.ListenPort = content.Listen_port
-		config.DdUrl = content.Dd_Url
+		if content.Listen_port > 0 {
+			config.ListenPort = content.Listen_port
+		}
+		if content.Dd_Url != "" {
+			config.DdUrl = content.Dd_Url
+		}
+		config.ApiKey = content.Api_key
+		config.ApplicationKey = content.Application_key
 	}
 }
 

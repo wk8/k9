@@ -1,4 +1,4 @@
-# this config shoul be equivalent to the other 4
+# this config shoul be equivalent to [1-4].yml combined
 
 metrics:
   remove:

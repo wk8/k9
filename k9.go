@@ -28,8 +28,17 @@ func main() {
 	}
 	config := NewConfig(*configPath, *logLevel)
 
+	// build the host tags retriever
+	var hostTags *HostTags
+	if config.ApiKey != "" && config.ApplicationKey != "" {
+		hostTags = NewHostsTags(config.DdUrl, config.ApiKey, config.ApplicationKey, nil)
+	}
+
+	// build the transformer
+	transformer := NewTransformer(config.PruningConfig, hostTags)
+
 	// start the proxy
-	proxy := NewProxy(config.DdUrl, &DDTransformer{config: config.PruningConfig})
+	proxy := NewProxy(config.DdUrl, transformer)
 	proxy.Start(config.ListenPort)
 
 	// then listen for signals
